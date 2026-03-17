@@ -1,5 +1,5 @@
-import { AcademicCapIcon, ArrowPathIcon, ArrowUpTrayIcon, UserPlusIcon } from '@heroicons/react/24/outline'
-import { Button, Stack } from 'react-bootstrap'
+import { AcademicCapIcon } from '@heroicons/react/24/outline'
+import { Stack } from 'react-bootstrap'
 import StudentTableComponent from '../tables/StudentTableComponent'
 
 
@@ -19,31 +19,6 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
             <h1 className="h3 mb-0" id="test">
               Student Directory
             </h1>
-          </Stack>
-          <Stack direction="horizontal" gap={2} className="align-items-center flex-wrap">
-            <Button variant="primary" className="d-inline-flex align-items-center gap-2" id="btn-add-student" type="button">
-            <UserPlusIcon className="heroicon-url" aria-hidden="true" />
-            Add student
-            </Button>
-            <Button
-              variant="secondary"
-              className="d-inline-flex align-items-center gap-2"
-            id="btn-upload-student"
-            type="button"
-            aria-label="Import students"
-          >
-            <ArrowUpTrayIcon className="heroicon-url" aria-hidden="true" />
-            Import
-            </Button>
-            <Button
-              variant="secondary"
-              className="d-inline-flex align-items-center"
-            id="btn-refresh-student"
-            type="button"
-            aria-label="Refresh students"
-          >
-            <ArrowPathIcon className="heroicon-url" aria-hidden="true" />
-            </Button>
           </Stack>
         </Stack>
       </header>

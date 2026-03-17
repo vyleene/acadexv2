@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react'
-import { MagnifyingGlassIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import {
+	ArrowPathIcon,
+	MagnifyingGlassIcon,
+	PencilSquareIcon,
+	TrashIcon,
+	UserPlusIcon,
+} from '@heroicons/react/24/outline'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
@@ -134,25 +140,47 @@ function StudentTableComponent() {
 	return (
 		<div className="table-shell">
 			<div className="table-toolbar">
-				<Form.Label htmlFor="studentsSearch" visuallyHidden>
-					Search students
-				</Form.Label>
-				<InputGroup className="table-search">
-					<InputGroup.Text>
-						<MagnifyingGlassIcon className="table-search__icon" aria-hidden="true" />
-					</InputGroup.Text>
-					<Form.Control
-						id="studentsSearch"
-						type="search"
-						className="table-search__input"
-						placeholder="Search..."
-						value={searchQuery}
-						onChange={(event) => {
-							setSearchQuery(event.currentTarget.value)
-							setCurrentPage(1)
-						}}
-					/>
-				</InputGroup>
+				<div className="table-toolbar__search">
+					<Form.Label htmlFor="studentsSearch" visuallyHidden>
+						Search students
+					</Form.Label>
+					<InputGroup className="table-search">
+						<InputGroup.Text>
+							<MagnifyingGlassIcon className="table-search__icon" aria-hidden="true" />
+						</InputGroup.Text>
+						<Form.Control
+							id="studentsSearch"
+							type="search"
+							className="table-search__input"
+							placeholder="Search..."
+							value={searchQuery}
+							onChange={(event) => {
+								setSearchQuery(event.currentTarget.value)
+								setCurrentPage(1)
+							}}
+						/>
+					</InputGroup>
+				</div>
+
+				<div className="table-toolbar__actions" role="group" aria-label="Student directory actions">
+					<Button
+						variant="primary"
+						className="d-inline-flex align-items-center gap-2"
+						id="btn-add-student"
+						type="button"
+					>
+						<UserPlusIcon className="heroicon-url" aria-hidden="true" />
+					</Button>
+					<Button
+						variant="secondary"
+						className="d-inline-flex align-items-center table-toolbar__icon-btn"
+						id="btn-refresh-student"
+						type="button"
+						aria-label="Refresh students"
+					>
+						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
+					</Button>
+				</div>
 			</div>
 
 			<Table id="studentsTable" striped hover responsive className="align-middle w-100">

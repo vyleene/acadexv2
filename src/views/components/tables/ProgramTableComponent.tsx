@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { MagnifyingGlassIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, MagnifyingGlassIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
@@ -96,25 +96,47 @@ function ProgramTableComponent() {
 	return (
 		<div className="table-shell">
 			<div className="table-toolbar">
-				<Form.Label htmlFor="programsSearch" visuallyHidden>
-					Search programs
-				</Form.Label>
-				<InputGroup className="table-search">
-					<InputGroup.Text>
-						<MagnifyingGlassIcon className="table-search__icon" aria-hidden="true" />
-					</InputGroup.Text>
-					<Form.Control
-						id="programsSearch"
-						type="search"
-						className="table-search__input"
-						placeholder="Search..."
-						value={searchQuery}
-						onChange={(event) => {
-							setSearchQuery(event.currentTarget.value)
-							setCurrentPage(1)
-						}}
-					/>
-				</InputGroup>
+				<div className="table-toolbar__search">
+					<Form.Label htmlFor="programsSearch" visuallyHidden>
+						Search programs
+					</Form.Label>
+					<InputGroup className="table-search">
+						<InputGroup.Text>
+							<MagnifyingGlassIcon className="table-search__icon" aria-hidden="true" />
+						</InputGroup.Text>
+						<Form.Control
+							id="programsSearch"
+							type="search"
+							className="table-search__input"
+							placeholder="Search..."
+							value={searchQuery}
+							onChange={(event) => {
+								setSearchQuery(event.currentTarget.value)
+								setCurrentPage(1)
+							}}
+						/>
+					</InputGroup>
+				</div>
+
+				<div className="table-toolbar__actions" role="group" aria-label="Program directory actions">
+					<Button
+						variant="primary"
+						className="d-inline-flex align-items-center gap-2"
+						id="btn-add-program"
+						type="button"
+					>
+						<PlusIcon className="heroicon-url" aria-hidden="true" />
+					</Button>
+					<Button
+						variant="secondary"
+						className="d-inline-flex align-items-center table-toolbar__icon-btn"
+						id="btn-refresh-program"
+						type="button"
+						aria-label="Refresh programs"
+					>
+						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
+					</Button>
+				</div>
 			</div>
 
 			<Table id="programsTable" striped hover responsive className="align-middle w-100">
