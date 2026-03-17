@@ -7,7 +7,7 @@ import {
   type ThemeMode,
 } from '../models/AppModel'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { isTauri } from '@tauri-apps/api/core'
+import { invoke, isTauri } from '@tauri-apps/api/core'
 
 const THEME_STORAGE_KEY = 'lexian-theme'
 
@@ -64,6 +64,16 @@ export function AppController(): AppViewProps {
       window.clearTimeout(hideTimer)
       window.clearTimeout(removeTimer)
     }
+  }, [])
+
+  useEffect(() => {
+    if (!isTauri()) {
+      return
+    }
+
+    void invoke('initialize_mysql_schema').catch((error) => {
+      console.error('Failed to initialize MySQL schema:', error)
+    })
   }, [])
 
   const onToggleTheme = () => {
