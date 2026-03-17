@@ -4,6 +4,7 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 } from '@heroicons/react/24/outline'
+import { Pagination } from 'react-bootstrap'
 
 interface DirectoryTablePaginationProps {
 	currentPage: number
@@ -47,70 +48,54 @@ function DirectoryTablePaginationComponent({
 				{totalItems > 0 ? `Showing ${rangeStart}-${rangeEnd} of ${totalItems}` : 'No records available'}
 			</p>
 
-			<nav aria-label="Directory table pagination">
-				<ul className="pagination pagination-sm table-pagination mb-0">
-					<li className={`page-item${currentPage === 1 ? ' disabled' : ''}`}>
-						<button
-							type="button"
-							className="page-link page-link--icon"
-							onClick={() => onPageChange(1)}
-							aria-label="First page"
-							disabled={currentPage === 1}
-						>
-							<ChevronDoubleLeftIcon className="heroicon-url" aria-hidden="true" />
-						</button>
-					</li>
+			<Pagination size="sm" className="table-pagination mb-0" aria-label="Directory table pagination">
+				<Pagination.Item
+					className="page-link--icon"
+					onClick={() => onPageChange(1)}
+					disabled={currentPage === 1}
+					aria-label="First page"
+				>
+					<ChevronDoubleLeftIcon className="heroicon-url" aria-hidden="true" />
+				</Pagination.Item>
 
-					<li className={`page-item${currentPage === 1 ? ' disabled' : ''}`}>
-						<button
-							type="button"
-							className="page-link page-link--icon"
-							onClick={() => onPageChange(currentPage - 1)}
-							aria-label="Previous page"
-							disabled={currentPage === 1}
-						>
-							<ChevronLeftIcon className="heroicon-url" aria-hidden="true" />
-						</button>
-					</li>
+				<Pagination.Item
+					className="page-link--icon"
+					onClick={() => onPageChange(currentPage - 1)}
+					disabled={currentPage === 1}
+					aria-label="Previous page"
+				>
+					<ChevronLeftIcon className="heroicon-url" aria-hidden="true" />
+				</Pagination.Item>
 
-					{pageWindow.map((page) => (
-						<li key={page} className={`page-item${page === currentPage ? ' active' : ''}`}>
-							<button
-								type="button"
-								className="page-link"
-								onClick={() => onPageChange(page)}
-								aria-current={page === currentPage ? 'page' : undefined}
-							>
-								{page}
-							</button>
-						</li>
-					))}
+				{pageWindow.map((page) => (
+					<Pagination.Item
+						key={page}
+						active={page === currentPage}
+						onClick={() => onPageChange(page)}
+						aria-current={page === currentPage ? 'page' : undefined}
+					>
+						{page}
+					</Pagination.Item>
+				))}
 
-					<li className={`page-item${currentPage === totalPages ? ' disabled' : ''}`}>
-						<button
-							type="button"
-							className="page-link page-link--icon"
-							onClick={() => onPageChange(currentPage + 1)}
-							aria-label="Next page"
-							disabled={currentPage === totalPages}
-						>
-							<ChevronRightIcon className="heroicon-url" aria-hidden="true" />
-						</button>
-					</li>
+				<Pagination.Item
+					className="page-link--icon"
+					onClick={() => onPageChange(currentPage + 1)}
+					disabled={currentPage === totalPages}
+					aria-label="Next page"
+				>
+					<ChevronRightIcon className="heroicon-url" aria-hidden="true" />
+				</Pagination.Item>
 
-					<li className={`page-item${currentPage === totalPages ? ' disabled' : ''}`}>
-						<button
-							type="button"
-							className="page-link page-link--icon"
-							onClick={() => onPageChange(totalPages)}
-							aria-label="Last page"
-							disabled={currentPage === totalPages}
-						>
-							<ChevronDoubleRightIcon className="heroicon-url" aria-hidden="true" />
-						</button>
-					</li>
-				</ul>
-			</nav>
+				<Pagination.Item
+					className="page-link--icon"
+					onClick={() => onPageChange(totalPages)}
+					disabled={currentPage === totalPages}
+					aria-label="Last page"
+				>
+					<ChevronDoubleRightIcon className="heroicon-url" aria-hidden="true" />
+				</Pagination.Item>
+			</Pagination>
 		</div>
 	)
 }

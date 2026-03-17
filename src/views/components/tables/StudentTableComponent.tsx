@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { Button, Form, InputGroup, Table } from 'react-bootstrap'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
 const rowsPerPage = 5
@@ -89,15 +90,35 @@ const placeholderStudents = [
 
 function StudentTableComponent() {
 	const [currentPage, setCurrentPage] = useState(1)
+	const [searchQuery, setSearchQuery] = useState('')
 
-	const totalItems = placeholderStudents.length
+	const filteredStudents = useMemo(() => {
+		const normalizedSearch = searchQuery.trim().toLowerCase()
+
+		if (!normalizedSearch) {
+			return placeholderStudents
+		}
+
+		return placeholderStudents.filter((student) => {
+			return (
+				String(student.id).includes(normalizedSearch) ||
+				student.firstName.toLowerCase().includes(normalizedSearch) ||
+				student.lastName.toLowerCase().includes(normalizedSearch) ||
+				student.programCode.toLowerCase().includes(normalizedSearch) ||
+				student.year.toLowerCase().includes(normalizedSearch) ||
+				student.gender.toLowerCase().includes(normalizedSearch)
+			)
+		})
+	}, [searchQuery])
+
+	const totalItems = filteredStudents.length
 	const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
 	const safeCurrentPage = Math.min(currentPage, totalPages)
 
 	const currentRows = useMemo(() => {
 		const startIndex = (safeCurrentPage - 1) * rowsPerPage
-		return placeholderStudents.slice(startIndex, startIndex + rowsPerPage)
-	}, [safeCurrentPage])
+		return filteredStudents.slice(startIndex, startIndex + rowsPerPage)
+	}, [filteredStudents, safeCurrentPage])
 
 	const rangeStart = totalItems === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
 	const rangeEnd = totalItems === 0 ? 0 : Math.min(safeCurrentPage * rowsPerPage, totalItems)
@@ -112,21 +133,43 @@ function StudentTableComponent() {
 
 	return (
 		<div className="table-shell">
-			<div className="table-responsive">
-				<table id="studentsTable" className="table table-striped table-hover align-middle w-100">
-					<thead className="table-light">
-						<tr>
-							<th>ID</th>
-							<th>First Name</th>
-							<th>Last Name</th>
-							<th>Program Code</th>
-							<th>Year</th>
-							<th>Gender</th>
-							<th className="actions-col text-center">Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						{currentRows.map((student) => (
+			<div className="table-toolbar">
+				<Form.Label htmlFor="studentsSearch" visuallyHidden>
+					Search students
+				</Form.Label>
+				<InputGroup className="table-search">
+					<InputGroup.Text>
+						<MagnifyingGlassIcon className="table-search__icon" aria-hidden="true" />
+					</InputGroup.Text>
+					<Form.Control
+						id="studentsSearch"
+						type="search"
+						className="table-search__input"
+						placeholder="Search..."
+						value={searchQuery}
+						onChange={(event) => {
+							setSearchQuery(event.currentTarget.value)
+							setCurrentPage(1)
+						}}
+					/>
+				</InputGroup>
+			</div>
+
+			<Table id="studentsTable" striped hover responsive className="align-middle w-100">
+				<thead className="table-light">
+					<tr>
+						<th>ID</th>
+						<th>First Name</th>
+						<th>Last Name</th>
+						<th>Program Code</th>
+						<th>Year</th>
+						<th>Gender</th>
+						<th className="actions-col text-center">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{currentRows.length > 0 ? (
+						currentRows.map((student) => (
 							<tr key={student.id}>
 								<td>{student.id}</td>
 								<td>{student.firstName}</td>
@@ -136,19 +179,35 @@ function StudentTableComponent() {
 								<td>{student.gender}</td>
 								<td className="text-center">
 									<div className="d-inline-flex gap-2">
-										<button type="button" className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" aria-label="Edit student">
+										<Button
+											type="button"
+											size="sm"
+											variant="outline-primary"
+											className="d-inline-flex align-items-center gap-1"
+											aria-label="Edit student"
+										>
 											<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
-										</button>
-										<button type="button" className="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" aria-label="Delete student">
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											variant="outline-danger"
+											className="d-inline-flex align-items-center gap-1"
+											aria-label="Delete student"
+										>
 											<TrashIcon className="heroicon-url" aria-hidden="true" />
-										</button>
+										</Button>
 									</div>
 								</td>
 							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+						))
+					) : (
+						<tr className="table-empty-row">
+							<td colSpan={7}>No matching students found.</td>
+						</tr>
+					)}
+				</tbody>
+			</Table>
 
 			<DirectoryTablePaginationComponent
 				currentPage={safeCurrentPage}
