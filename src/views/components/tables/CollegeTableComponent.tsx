@@ -1,87 +1,92 @@
-import { useMemo, useState } from 'react'
-import { ArrowPathIcon, MagnifyingGlassIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useMemo } from 'react'
+import {
+	ArrowPathIcon,
+	ArrowsUpDownIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
+	MagnifyingGlassIcon,
+	PencilSquareIcon,
+	PlusIcon,
+	TrashIcon,
+} from '@heroicons/react/24/outline'
+import { type ColumnDef, flexRender } from '@tanstack/react-table'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
+import { useCollegeTableController } from '../../../controllers/useCollegeTableController'
+import { type CollegeRow } from '../../../models/CollegeTableModel'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
-const rowsPerPage = 5
-
-const placeholderColleges = [
-	{
-		code: 'CCIS',
-		collegeName: 'College of Computing and Information Sciences',
-	},
-	{
-		code: 'CED',
-		collegeName: 'College of Education',
-	},
-	{
-		code: 'CHS',
-		collegeName: 'College of Health Sciences',
-	},
-	{
-		code: 'CBA',
-		collegeName: 'College of Business and Accountancy',
-	},
-	{
-		code: 'COE',
-		collegeName: 'College of Engineering',
-	},
-	{
-		code: 'CASS',
-		collegeName: 'College of Arts and Social Sciences',
-	},
-	{
-		code: 'CAS',
-		collegeName: 'College of Arts and Sciences',
-	},
-	{
-		code: 'CTE',
-		collegeName: 'College of Teacher Education',
-	},
-	{
-		code: 'CN',
-		collegeName: 'College of Nursing',
-	},
-]
-
-function CollegeTableComponent() {
-	const [currentPage, setCurrentPage] = useState(1)
-	const [searchQuery, setSearchQuery] = useState('')
-
-	const filteredColleges = useMemo(() => {
-		const normalizedSearch = searchQuery.trim().toLowerCase()
-
-		if (!normalizedSearch) {
-			return placeholderColleges
-		}
-
-		return placeholderColleges.filter((college) => {
-			return college.code.toLowerCase().includes(normalizedSearch) || college.collegeName.toLowerCase().includes(normalizedSearch)
-		})
-	}, [searchQuery])
-
-	const totalItems = filteredColleges.length
-	const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
-	const safeCurrentPage = Math.min(currentPage, totalPages)
-
-	const currentRows = useMemo(() => {
-		const startIndex = (safeCurrentPage - 1) * rowsPerPage
-		return filteredColleges.slice(startIndex, startIndex + rowsPerPage)
-	}, [filteredColleges, safeCurrentPage])
-
-	const rangeStart = totalItems === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
-	const rangeEnd = totalItems === 0 ? 0 : Math.min(safeCurrentPage * rowsPerPage, totalItems)
-
-	const handlePageChange = (page: number) => {
-		if (page < 1 || page > totalPages) {
-			return
-		}
-
-		setCurrentPage(page)
+function renderSortIcon(sortState: false | 'asc' | 'desc') {
+	if (sortState === 'asc') {
+		return <ChevronUpIcon className="table-sort-icon" aria-hidden="true" />
 	}
 
+	if (sortState === 'desc') {
+		return <ChevronDownIcon className="table-sort-icon" aria-hidden="true" />
+	}
+
+	return <ArrowsUpDownIcon className="table-sort-icon table-sort-icon--muted" aria-hidden="true" />
+}
+
+function CollegeTableComponent() {
+	const columns = useMemo<ColumnDef<CollegeRow>[]>(
+		() => [
+			{ accessorKey: 'code', header: 'Code' },
+			{ accessorKey: 'collegeName', header: 'College Name' },
+			{
+				id: 'actions',
+				header: 'Actions',
+				enableSorting: false,
+				enableGlobalFilter: false,
+				cell: () => (
+					<div className="d-inline-flex gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="outline-primary"
+							className="d-inline-flex align-items-center gap-1"
+							aria-label="Edit college"
+						>
+							<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline-danger"
+							className="d-inline-flex align-items-center gap-1"
+							aria-label="Delete college"
+						>
+							<TrashIcon className="heroicon-url" aria-hidden="true" />
+						</Button>
+					</div>
+				),
+			},
+		],
+		[]
+	)
+
+	const {
+		table,
+		globalFilter,
+		setGlobalFilter,
+		isLoading,
+		loadError,
+		refreshColleges,
+		currentPage,
+		totalPages,
+		totalItems,
+		rangeStart,
+		rangeEnd,
+		handlePageChange,
+	} = useCollegeTableController({ columns })
+
+	const emptyStateMessage = loadError
+		? `Failed to load colleges: ${loadError}`
+		: isLoading
+			? 'Loading colleges...'
+			: 'No matching colleges found.'
+
 	return (
-		<div className="table-shell">
+		<div className={`table-shell${isLoading ? ' is-loading' : ''}`}>
 			<div className="table-toolbar">
 				<div className="table-toolbar__search">
 					<Form.Label htmlFor="collegesSearch" visuallyHidden>
@@ -96,10 +101,10 @@ function CollegeTableComponent() {
 							type="search"
 							className="table-search__input"
 							placeholder="Search..."
-							value={searchQuery}
+							value={globalFilter}
 							onChange={(event) => {
-								setSearchQuery(event.currentTarget.value)
-								setCurrentPage(1)
+								setGlobalFilter(event.currentTarget.value)
+								table.setPageIndex(0)
 							}}
 						/>
 					</InputGroup>
@@ -120,6 +125,10 @@ function CollegeTableComponent() {
 						id="btn-refresh-college"
 						type="button"
 						aria-label="Refresh colleges"
+						onClick={() => {
+							void refreshColleges()
+						}}
+						disabled={isLoading}
 					>
 						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -128,52 +137,65 @@ function CollegeTableComponent() {
 
 			<Table id="collegesTable" striped hover responsive className="align-middle w-100">
 				<thead className="table-light">
-					<tr>
-						<th>Code</th>
-						<th>College Name</th>
-						<th className="actions-col text-center">Actions</th>
-					</tr>
+					{table.getHeaderGroups().map((headerGroup) => (
+						<tr key={headerGroup.id}>
+							{headerGroup.headers.map((header) => {
+								const isActionsColumn = header.column.id === 'actions'
+								const canSort = header.column.getCanSort()
+								const sortState = header.column.getIsSorted()
+								const headerLabel =
+									typeof header.column.columnDef.header === 'string'
+										? header.column.columnDef.header
+										: header.column.id
+								const headerContent = header.isPlaceholder
+									? null
+									: flexRender(header.column.columnDef.header, header.getContext())
+
+								return (
+									<th
+										key={header.id}
+										className={isActionsColumn ? 'actions-col text-center' : undefined}
+									>
+										{canSort ? (
+											<button
+												type="button"
+												className="table-sort-btn"
+												onClick={header.column.getToggleSortingHandler()}
+												aria-label={`Sort by ${headerLabel}`}
+											>
+												<span>{headerContent}</span>
+												{renderSortIcon(sortState)}
+											</button>
+										) : (
+											headerContent
+										)}
+									</th>
+								)
+							})}
+						</tr>
+					))}
 				</thead>
 				<tbody>
-					{currentRows.length > 0 ? (
-						currentRows.map((college) => (
-							<tr key={college.code}>
-								<td>{college.code}</td>
-								<td>{college.collegeName}</td>
-								<td className="text-center">
-									<div className="d-inline-flex gap-2">
-										<Button
-											type="button"
-											size="sm"
-											variant="outline-primary"
-											className="d-inline-flex align-items-center gap-1"
-											aria-label="Edit college"
-										>
-											<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
-										</Button>
-										<Button
-											type="button"
-											size="sm"
-											variant="outline-danger"
-											className="d-inline-flex align-items-center gap-1"
-											aria-label="Delete college"
-										>
-											<TrashIcon className="heroicon-url" aria-hidden="true" />
-										</Button>
-									</div>
-								</td>
+					{table.getRowModel().rows.length > 0 ? (
+						table.getRowModel().rows.map((row) => (
+							<tr key={row.id}>
+								{row.getVisibleCells().map((cell) => (
+									<td key={cell.id} className={cell.column.id === 'actions' ? 'text-center' : undefined}>
+										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+									</td>
+								))}
 							</tr>
 						))
 					) : (
 						<tr className="table-empty-row">
-							<td colSpan={3}>No matching colleges found.</td>
+							<td colSpan={3}>{emptyStateMessage}</td>
 						</tr>
 					)}
 				</tbody>
 			</Table>
 
 			<DirectoryTablePaginationComponent
-				currentPage={safeCurrentPage}
+				currentPage={currentPage}
 				totalPages={totalPages}
 				totalItems={totalItems}
 				rangeStart={rangeStart}

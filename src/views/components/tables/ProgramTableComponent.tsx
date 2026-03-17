@@ -1,100 +1,93 @@
-import { useMemo, useState } from 'react'
-import { ArrowPathIcon, MagnifyingGlassIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useMemo } from 'react'
+import {
+	ArrowPathIcon,
+	ArrowsUpDownIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
+	MagnifyingGlassIcon,
+	PencilSquareIcon,
+	PlusIcon,
+	TrashIcon,
+} from '@heroicons/react/24/outline'
+import { type ColumnDef, flexRender } from '@tanstack/react-table'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
+import { useProgramTableController } from '../../../controllers/useProgramTableController'
+import { type ProgramRow } from '../../../models/ProgramTableModel'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
-const rowsPerPage = 5
-
-const placeholderPrograms = [
-	{
-		code: 'BSCS',
-		programName: 'Bachelor of Science in Computer Science',
-		college: 'CCIS',
-	},
-	{
-		code: 'BSIT',
-		programName: 'Bachelor of Science in Information Technology',
-		college: 'CCIS',
-	},
-	{
-		code: 'BSEDUC',
-		programName: 'Bachelor of Secondary Education',
-		college: 'CED',
-	},
-	{
-		code: 'BSN',
-		programName: 'Bachelor of Science in Nursing',
-		college: 'CHS',
-	},
-	{
-		code: 'BSBA',
-		programName: 'Bachelor of Science in Business Administration',
-		college: 'CBA',
-	},
-	{
-		code: 'BSCE',
-		programName: 'Bachelor of Science in Civil Engineering',
-		college: 'COE',
-	},
-	{
-		code: 'BSEDMATH',
-		programName: 'Bachelor of Secondary Education Major in Math',
-		college: 'CED',
-	},
-	{
-		code: 'BSPHARM',
-		programName: 'Bachelor of Science in Pharmacy',
-		college: 'CHS',
-	},
-	{
-		code: 'BSENTREP',
-		programName: 'Bachelor of Science in Entrepreneurship',
-		college: 'CBA',
-	},
-]
-
-function ProgramTableComponent() {
-	const [currentPage, setCurrentPage] = useState(1)
-	const [searchQuery, setSearchQuery] = useState('')
-
-	const filteredPrograms = useMemo(() => {
-		const normalizedSearch = searchQuery.trim().toLowerCase()
-
-		if (!normalizedSearch) {
-			return placeholderPrograms
-		}
-
-		return placeholderPrograms.filter((program) => {
-			return (
-				program.code.toLowerCase().includes(normalizedSearch) ||
-				program.programName.toLowerCase().includes(normalizedSearch) ||
-				program.college.toLowerCase().includes(normalizedSearch)
-			)
-		})
-	}, [searchQuery])
-
-	const totalItems = filteredPrograms.length
-	const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
-	const safeCurrentPage = Math.min(currentPage, totalPages)
-
-	const currentRows = useMemo(() => {
-		const startIndex = (safeCurrentPage - 1) * rowsPerPage
-		return filteredPrograms.slice(startIndex, startIndex + rowsPerPage)
-	}, [filteredPrograms, safeCurrentPage])
-
-	const rangeStart = totalItems === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
-	const rangeEnd = totalItems === 0 ? 0 : Math.min(safeCurrentPage * rowsPerPage, totalItems)
-
-	const handlePageChange = (page: number) => {
-		if (page < 1 || page > totalPages) {
-			return
-		}
-
-		setCurrentPage(page)
+function renderSortIcon(sortState: false | 'asc' | 'desc') {
+	if (sortState === 'asc') {
+		return <ChevronUpIcon className="table-sort-icon" aria-hidden="true" />
 	}
 
+	if (sortState === 'desc') {
+		return <ChevronDownIcon className="table-sort-icon" aria-hidden="true" />
+	}
+
+	return <ArrowsUpDownIcon className="table-sort-icon table-sort-icon--muted" aria-hidden="true" />
+}
+
+function ProgramTableComponent() {
+	const columns = useMemo<ColumnDef<ProgramRow>[]>(
+		() => [
+			{ accessorKey: 'code', header: 'Code' },
+			{ accessorKey: 'programName', header: 'Program Name' },
+			{ accessorKey: 'college', header: 'College' },
+			{
+				id: 'actions',
+				header: 'Actions',
+				enableSorting: false,
+				enableGlobalFilter: false,
+				cell: () => (
+					<div className="d-inline-flex gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="outline-primary"
+							className="d-inline-flex align-items-center gap-1"
+							aria-label="Edit program"
+						>
+							<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline-danger"
+							className="d-inline-flex align-items-center gap-1"
+							aria-label="Delete program"
+						>
+							<TrashIcon className="heroicon-url" aria-hidden="true" />
+						</Button>
+					</div>
+				),
+			},
+		],
+		[]
+	)
+
+	const {
+		table,
+		globalFilter,
+		setGlobalFilter,
+		isLoading,
+		loadError,
+		refreshPrograms,
+		currentPage,
+		totalPages,
+		totalItems,
+		rangeStart,
+		rangeEnd,
+		handlePageChange,
+	} = useProgramTableController({ columns })
+
+	const emptyStateMessage = loadError
+		? `Failed to load programs: ${loadError}`
+		: isLoading
+			? 'Loading programs...'
+			: 'No matching programs found.'
+
 	return (
-		<div className="table-shell">
+		<div className={`table-shell${isLoading ? ' is-loading' : ''}`}>
 			<div className="table-toolbar">
 				<div className="table-toolbar__search">
 					<Form.Label htmlFor="programsSearch" visuallyHidden>
@@ -109,10 +102,10 @@ function ProgramTableComponent() {
 							type="search"
 							className="table-search__input"
 							placeholder="Search..."
-							value={searchQuery}
+							value={globalFilter}
 							onChange={(event) => {
-								setSearchQuery(event.currentTarget.value)
-								setCurrentPage(1)
+								setGlobalFilter(event.currentTarget.value)
+								table.setPageIndex(0)
 							}}
 						/>
 					</InputGroup>
@@ -133,6 +126,10 @@ function ProgramTableComponent() {
 						id="btn-refresh-program"
 						type="button"
 						aria-label="Refresh programs"
+						onClick={() => {
+							void refreshPrograms()
+						}}
+						disabled={isLoading}
 					>
 						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -141,54 +138,65 @@ function ProgramTableComponent() {
 
 			<Table id="programsTable" striped hover responsive className="align-middle w-100">
 				<thead className="table-light">
-					<tr>
-						<th>Code</th>
-						<th>Program Name</th>
-						<th>College</th>
-						<th className="actions-col text-center">Actions</th>
-					</tr>
+					{table.getHeaderGroups().map((headerGroup) => (
+						<tr key={headerGroup.id}>
+							{headerGroup.headers.map((header) => {
+								const isActionsColumn = header.column.id === 'actions'
+								const canSort = header.column.getCanSort()
+								const sortState = header.column.getIsSorted()
+								const headerLabel =
+									typeof header.column.columnDef.header === 'string'
+										? header.column.columnDef.header
+										: header.column.id
+								const headerContent = header.isPlaceholder
+									? null
+									: flexRender(header.column.columnDef.header, header.getContext())
+
+								return (
+									<th
+										key={header.id}
+										className={isActionsColumn ? 'actions-col text-center' : undefined}
+									>
+										{canSort ? (
+											<button
+												type="button"
+												className="table-sort-btn"
+												onClick={header.column.getToggleSortingHandler()}
+												aria-label={`Sort by ${headerLabel}`}
+											>
+												<span>{headerContent}</span>
+												{renderSortIcon(sortState)}
+											</button>
+										) : (
+											headerContent
+										)}
+									</th>
+								)
+							})}
+						</tr>
+					))}
 				</thead>
 				<tbody>
-					{currentRows.length > 0 ? (
-						currentRows.map((program) => (
-							<tr key={program.code}>
-								<td>{program.code}</td>
-								<td>{program.programName}</td>
-								<td>{program.college}</td>
-								<td className="text-center">
-									<div className="d-inline-flex gap-2">
-										<Button
-											type="button"
-											size="sm"
-											variant="outline-primary"
-											className="d-inline-flex align-items-center gap-1"
-											aria-label="Edit program"
-										>
-											<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
-										</Button>
-										<Button
-											type="button"
-											size="sm"
-											variant="outline-danger"
-											className="d-inline-flex align-items-center gap-1"
-											aria-label="Delete program"
-										>
-											<TrashIcon className="heroicon-url" aria-hidden="true" />
-										</Button>
-									</div>
-								</td>
+					{table.getRowModel().rows.length > 0 ? (
+						table.getRowModel().rows.map((row) => (
+							<tr key={row.id}>
+								{row.getVisibleCells().map((cell) => (
+									<td key={cell.id} className={cell.column.id === 'actions' ? 'text-center' : undefined}>
+										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+									</td>
+								))}
 							</tr>
 						))
 					) : (
 						<tr className="table-empty-row">
-							<td colSpan={4}>No matching programs found.</td>
+							<td colSpan={4}>{emptyStateMessage}</td>
 						</tr>
 					)}
 				</tbody>
 			</Table>
 
 			<DirectoryTablePaginationComponent
-				currentPage={safeCurrentPage}
+				currentPage={currentPage}
 				totalPages={totalPages}
 				totalItems={totalItems}
 				rangeStart={rangeStart}
