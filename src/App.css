@@ -418,6 +418,33 @@ html[data-bs-theme='dark'] .app-nav__item.is-active .heroicon-url {
   background-color: var(--app-soft) !important;
 }
 
+.table-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.table-sort-btn:hover {
+  color: var(--app-text);
+}
+
+.table-sort-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.table-sort-icon--muted {
+  opacity: 0.5;
+}
+
 .table tbody tr {
   transition: background-color 0.2s ease;
 }
