@@ -1,5 +1,6 @@
 import type { ThemeMode } from '../../models/AppModel'
 import { MinusIcon, MoonIcon, SunIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { Button, Stack } from 'react-bootstrap'
 
 interface TitleBarProps {
   theme: ThemeMode
@@ -22,8 +23,9 @@ function TitleBarComponent({
           <span className="app-titlebar__title">Acadex</span>
         </div>
       </div>
-      <div className="app-titlebar__actions">
-        <button
+      <Stack direction="horizontal" gap={2} className="app-titlebar__actions">
+        <Button
+          variant="link"
           className="titlebar-btn titlebar-btn--theme"
           id="btn-theme"
           type="button"
@@ -33,8 +35,9 @@ function TitleBarComponent({
         >
           <MoonIcon className="heroicon-url theme-icon theme-icon--moon" aria-hidden="true" />
           <SunIcon className="heroicon-url theme-icon theme-icon--sun" aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="link"
           className="titlebar-btn"
           id="btn-minimize"
           aria-label="Minimize window"
@@ -42,8 +45,9 @@ function TitleBarComponent({
           onClick={onMinimizeWindow}
         >
           <MinusIcon className="heroicon-url titlebar-icon" aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="link"
           className="titlebar-btn titlebar-btn--close"
           id="btn-close"
           aria-label="Close window"
@@ -51,8 +55,8 @@ function TitleBarComponent({
           onClick={onCloseWindow}
         >
           <XMarkIcon className="heroicon-url titlebar-icon" aria-hidden="true" />
-        </button>
-      </div>
+        </Button>
+      </Stack>
     </header>
   )
 }

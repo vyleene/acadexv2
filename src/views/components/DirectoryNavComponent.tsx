@@ -1,5 +1,6 @@
 import type { PanelKey } from '../../models/AppModel'
 import { BuildingLibraryIcon, ClipboardDocumentIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import { Image, Nav } from 'react-bootstrap'
 
 interface DirectoryNavProps {
   activePanel: PanelKey
@@ -11,44 +12,53 @@ function DirectoryNavComponent({ activePanel, onSelectPanel }: DirectoryNavProps
     `app-nav__item${activePanel === panel ? ' is-active' : ''}`
 
   return (
-    <nav className="app-nav" aria-label="Directory navigation">
+    <Nav as="nav" className="app-nav" aria-label="Directory navigation">
       <div className="app-nav__container">
         <div className="app-nav__logo">
-          <img src="/img/appIcon.ico" width="48" height="48" alt="A" />
+          <Image src="/img/appIcon.ico" width={48} height={48} alt="A" />
           <span>cadex.</span>
         </div>
 
-        <button
-          className={getNavClassName('students')}
-          type="button"
-          data-panel="students"
-          onClick={() => onSelectPanel('students')}
-        >
-          <UserGroupIcon className="heroicon-url" aria-hidden="true" />
-          Student Directory
-        </button>
+        <Nav.Item as="div">
+          <Nav.Link
+            as="button"
+            className={getNavClassName('students')}
+            type="button"
+            data-panel="students"
+            onClick={() => onSelectPanel('students')}
+          >
+            <UserGroupIcon className="heroicon-url" aria-hidden="true" />
+            Student Directory
+          </Nav.Link>
+        </Nav.Item>
 
-        <button
-          className={getNavClassName('programs')}
-          type="button"
-          data-panel="programs"
-          onClick={() => onSelectPanel('programs')}
-        >
-          <ClipboardDocumentIcon className="heroicon-url" aria-hidden="true" />
-          Program Directory
-        </button>
+        <Nav.Item as="div">
+          <Nav.Link
+            as="button"
+            className={getNavClassName('programs')}
+            type="button"
+            data-panel="programs"
+            onClick={() => onSelectPanel('programs')}
+          >
+            <ClipboardDocumentIcon className="heroicon-url" aria-hidden="true" />
+            Program Directory
+          </Nav.Link>
+        </Nav.Item>
 
-        <button
-          className={getNavClassName('colleges')}
-          type="button"
-          data-panel="colleges"
-          onClick={() => onSelectPanel('colleges')}
-        >
-          <BuildingLibraryIcon className="heroicon-url" aria-hidden="true" />
-          College Directory
-        </button>
+        <Nav.Item as="div">
+          <Nav.Link
+            as="button"
+            className={getNavClassName('colleges')}
+            type="button"
+            data-panel="colleges"
+            onClick={() => onSelectPanel('colleges')}
+          >
+            <BuildingLibraryIcon className="heroicon-url" aria-hidden="true" />
+            College Directory
+          </Nav.Link>
+        </Nav.Item>
       </div>
-    </nav>
+    </Nav>
   )
 }
 

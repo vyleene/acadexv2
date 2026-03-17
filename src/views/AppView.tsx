@@ -1,4 +1,5 @@
 import type { AppViewProps } from '../models/AppModel'
+import { Card, Container, ToastContainer } from 'react-bootstrap'
 import ProgramDirectoryCard from './components/cards/ProgramDirectoryCardComponent'
 import StudentDirectoryCard from './components/cards/StudentDirectoryCardComponent'
 import CollegeDirectoryCard from './components/cards/CollegeDirectoryCardComponent'
@@ -28,17 +29,17 @@ function AppView({
 
       <DirectoryNav activePanel={activePanel} onSelectPanel={onSelectPanel} />
 
-      <div className="toast-container" aria-live="polite" aria-atomic="true"></div>
+      <ToastContainer className="toast-container" aria-live="polite" aria-atomic="true" />
 
-      <main className="container py-4 app-content">
-        <div className="card shadow-sm app-card">
-          <div className="card-body">
+      <Container as="main" className="py-4 app-content">
+        <Card className="shadow-sm app-card">
+          <Card.Body>
             <StudentDirectoryCard isActive={activePanel === 'students'} />
             <ProgramDirectoryCard isActive={activePanel === 'programs'} />
             <CollegeDirectoryCard isActive={activePanel === 'colleges'} />
-          </div>
-        </div>
-      </main>
+          </Card.Body>
+        </Card>
+      </Container>
     </>
   )
 }

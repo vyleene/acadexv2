@@ -436,6 +436,62 @@ html[data-bs-theme='dark'] .app-nav__item.is-active .heroicon-url {
   overflow: hidden;
 }
 
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.8rem 1rem 0.55rem;
+  border-bottom: 1px solid var(--app-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--app-surface) 82%, var(--app-surface-2) 18%),
+    color-mix(in srgb, var(--app-surface) 94%, var(--app-soft) 6%)
+  );
+}
+
+.table-search {
+  width: min(100%, 360px);
+}
+
+.table-search__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--app-muted);
+}
+
+.table-search .input-group-text {
+  border-radius: 999px 0 0 999px;
+  border-right: 0;
+  background: color-mix(in srgb, var(--app-surface) 90%, var(--app-soft) 10%);
+  color: var(--app-muted);
+  padding-inline: 0.75rem;
+}
+
+.table-search__input {
+  min-height: 2.3rem;
+  border-radius: 0 999px 999px 0;
+  border-left: 0;
+  font-size: 0.88rem;
+  background: color-mix(in srgb, var(--app-surface) 90%, var(--app-soft) 10%);
+}
+
+.table-search:focus-within .input-group-text,
+.table-search:focus-within .table-search__input {
+  border-color: var(--app-accent-strong);
+}
+
+.table-search:focus-within .input-group-text {
+  box-shadow: -0.2rem 0 0 0 color-mix(in srgb, var(--app-accent-strong) 28%, transparent);
+}
+
+.table-empty-row td {
+  padding: 1.25rem 0.75rem !important;
+  text-align: center;
+  color: var(--app-muted);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 .table-overlay {
   position: absolute;
   inset: 0;
@@ -781,6 +837,14 @@ html[data-bs-theme='dark'] .btn-outline-primary.active {
 }
 
 @media (max-width: 768px) {
+  .table-toolbar {
+    padding: 0.75rem;
+  }
+
+  .table-search {
+    width: 100%;
+  }
+
   .table-pagination-bar {
     flex-direction: column;
     align-items: flex-start;
