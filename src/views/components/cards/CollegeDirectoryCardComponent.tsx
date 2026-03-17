@@ -1,4 +1,5 @@
 import { ArrowPathIcon, ArrowUpTrayIcon, BuildingLibraryIcon, PlusIcon } from '@heroicons/react/24/outline'
+import CollegeTableComponent from '../tables/CollegeTableComponent'
 
 
 interface CollegeDirectoryCardProps {
@@ -41,25 +42,7 @@ function CollegeDirectoryCardComponent({ isActive }: CollegeDirectoryCardProps) 
           </button>
         </div>
       </header>
-
-      <div className="table-responsive table-shell">
-        <div className="table-overlay" aria-hidden="true">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-
-        <table id="collegesTable" className="table table-striped table-hover align-middle w-100">
-          <thead className="table-light">
-            <tr>
-              <th>College Code</th>
-              <th>College Name</th>
-              <th className="text-center actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <CollegeTableComponent />
     </section>
   )
 }

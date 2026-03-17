@@ -1,4 +1,5 @@
 import { AcademicCapIcon, ArrowPathIcon, ArrowUpTrayIcon, UserPlusIcon } from '@heroicons/react/24/outline'
+import StudentTableComponent from '../tables/StudentTableComponent'
 
 
 interface StudentDirectoryCardProps {
@@ -43,29 +44,7 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
           </button>
         </div>
       </header>
-
-      <div className="table-responsive table-shell">
-        <div className="table-overlay" aria-hidden="true">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-
-        <table id="studentsTable" className="table table-striped table-hover align-middle w-100">
-          <thead className="table-light">
-            <tr>
-              <th>ID</th>
-              <th>First Name</th>
-              <th>Last Name</th>
-              <th>Program Code</th>
-              <th>Year</th>
-              <th>Gender</th>
-              <th className="text-center actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <StudentTableComponent />
     </section>
   )
 }
