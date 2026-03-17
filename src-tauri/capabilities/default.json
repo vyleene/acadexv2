@@ -8,6 +8,13 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "sql:default"
+    "sql:allow-close",
+    "sql:allow-execute",
+    "sql:allow-select",
+    "sql:allow-load",
+    "core:window:default",
+    "core:window:allow-minimize",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging"
   ]
 }
