@@ -56,8 +56,8 @@ impl StudentsModel {
         payload: CreateStudentPayload,
     ) -> Result<Student, String> {
         let id = normalize_student_id(payload.id)?;
-        let firstname = normalize_name(&payload.firstname, "student firstname", 20)?;
-        let lastname = normalize_name(&payload.lastname, "student lastname", 20)?;
+        let firstname = normalize_name(&payload.firstname, "student firstname", 32)?;
+        let lastname = normalize_name(&payload.lastname, "student lastname", 32)?;
         let year = normalize_year(&payload.year)?;
         let gender = normalize_gender(&payload.gender)?;
 
@@ -285,7 +285,7 @@ impl StudentsModel {
 }
 
 fn normalize_code(value: &str, field_name: &str) -> Result<String, String> {
-    normalize_name(value, field_name, 10)
+    normalize_name(value, field_name, 16)
 }
 
 fn normalize_name(value: &str, field_name: &str, max_length: usize) -> Result<String, String> {
