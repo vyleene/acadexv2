@@ -3,7 +3,6 @@ use std::env;
 
 const DATABASE_URL_ENV: &str = "ACADEX_DATABASE_URL";
 const DEFAULT_DATABASE_URL: &str = "mysql://root:password@localhost:3306/acadex";
-const MYSQL_DUPLICATE_COLUMN_ERROR_CODE: &str = "1060";
 const SCHEMA_MIGRATION_SQL: &[&str] = &[
     r#"CREATE TABLE IF NOT EXISTS colleges (
         code varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -76,26 +75,6 @@ impl DatabaseModel {
                 .await
                 .map_err(|error| format!("Failed to execute schema statement: {}", error))?;
         }
-
-        match sqlx::query(
-            "ALTER TABLE students_programs ADD COLUMN date_enrolled datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
-        )
-        .execute(&self.pool)
-        .await
-        {
-            Ok(_) => {}
-            Err(sqlx::Error::Database(database_error))
-                if database_error.code().as_deref() == Some(MYSQL_DUPLICATE_COLUMN_ERROR_CODE) =>
-            {
-            }
-            Err(error) => {
-                return Err(format!(
-                    "Failed to ensure students_programs.date_enrolled column: {}",
-                    error
-                ));
-            }
-        }
-
         Ok(())
     }
 }
