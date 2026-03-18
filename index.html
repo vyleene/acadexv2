@@ -1,10 +1,37 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri + React + Typescript</title>
+    <script>
+      ;(() => {
+        const THEME_STORAGE_KEY = 'lexian-theme'
+        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+        const resolvedTheme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark'
+
+        document.documentElement.setAttribute('data-bs-theme', resolvedTheme)
+        document.documentElement.style.colorScheme = resolvedTheme
+      })()
+    </script>
+    <style>
+      html,
+      body {
+        background-color: #212529;
+        background-image:
+          radial-gradient(circle at 12% 8%, rgba(255, 209, 102, 0.08) 0%, transparent 65%),
+          radial-gradient(circle at 88% 12%, rgba(255, 209, 102, 0.06) 0%, transparent 65%);
+      }
+
+      html[data-bs-theme='light'],
+      html[data-bs-theme='light'] body {
+        background-color: #ffffff;
+        background-image:
+          radial-gradient(circle at 12% 8%, rgba(47, 107, 255, 0.07) 0%, transparent 65%),
+          radial-gradient(circle at 88% 12%, rgba(47, 107, 255, 0.05) 0%, transparent 65%);
+      }
+    </style>
+    <title>Acadex v2 - Simple Student Information System</title>
   </head>
 
   <body>
