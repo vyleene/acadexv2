@@ -1,0 +1,486 @@
+import { useCallback, useEffect, useState } from 'react'
+import {
+  type ColumnDef,
+  type PaginationState,
+  type SortingState,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import {
+  PROGRAM_ROWS_PER_PAGE,
+  PROGRAMS_REFRESH_EVENT,
+  type ProgramRow,
+  createProgram,
+  deleteProgram,
+  fetchCollegeCodes,
+  fetchProgramCollegeCodes,
+  fetchProgramRows,
+  getPrimaryCollegeCode,
+  normalizeCollegeCode,
+  normalizeProgramCode,
+  syncProgramCollegeLink,
+  updateProgram,
+} from '../models/ProgramModel'
+
+type UseProgramControllerProps = {
+  columns: ColumnDef<ProgramRow>[]
+}
+
+type BootstrapModalInstance = {
+  hide: () => void
+}
+
+type BootstrapModalConstructor = {
+  new (element: Element): BootstrapModalInstance
+  getInstance: (element: Element) => BootstrapModalInstance | null
+  getOrCreateInstance?: (element: Element) => BootstrapModalInstance
+}
+
+function getBootstrapModal(): BootstrapModalConstructor | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const typedWindow = window as typeof window & {
+    bootstrap?: { Modal?: BootstrapModalConstructor }
+  }
+  return typedWindow.bootstrap?.Modal ?? null
+}
+
+function closeModal(modalElement: HTMLElement) {
+  const dismissButton = modalElement.querySelector(
+    '[data-bs-dismiss="modal"]'
+  ) as HTMLButtonElement | null
+
+  if (dismissButton) {
+    dismissButton.click()
+    return
+  }
+
+  const modalConstructor = getBootstrapModal()
+
+  if (modalConstructor) {
+    const modalInstance =
+      modalConstructor.getInstance(modalElement) ??
+      (typeof modalConstructor.getOrCreateInstance === 'function'
+        ? modalConstructor.getOrCreateInstance(modalElement)
+        : new modalConstructor(modalElement))
+    modalInstance.hide()
+    return
+  }
+
+  modalElement.classList.remove('show')
+  modalElement.setAttribute('aria-hidden', 'true')
+  modalElement.style.display = 'none'
+  document.body.classList.remove('modal-open')
+  document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
+}
+
+function setCollegeOptions(
+  selectElement: HTMLSelectElement,
+  collegeCodes: string[],
+  selectedCollegeCode?: string,
+) {
+  const normalizedSelectedCode = normalizeCollegeCode(selectedCollegeCode)
+  selectElement.replaceChildren()
+
+  const placeholderOption = document.createElement('option')
+  placeholderOption.value = ''
+  placeholderOption.textContent = 'Select college code'
+  placeholderOption.hidden = true
+  selectElement.append(placeholderOption)
+
+  for (const code of collegeCodes) {
+    const option = document.createElement('option')
+    option.value = code
+    option.textContent = code
+    selectElement.append(option)
+  }
+
+  if (
+    normalizedSelectedCode &&
+    !collegeCodes.some((collegeCode) => collegeCode === normalizedSelectedCode)
+  ) {
+    const currentOption = document.createElement('option')
+    currentOption.value = normalizedSelectedCode
+    currentOption.textContent = normalizedSelectedCode
+    selectElement.append(currentOption)
+  }
+
+  selectElement.value = normalizedSelectedCode
+}
+
+export function useProgramController({ columns }: UseProgramControllerProps) {
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'code', desc: false }])
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: PROGRAM_ROWS_PER_PAGE,
+  })
+  const [programs, setPrograms] = useState<ProgramRow[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const refreshPrograms = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(null)
+
+    try {
+      const rows = await fetchProgramRows()
+      setPrograms(rows)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      setLoadError(message)
+      setPrograms([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refreshPrograms()
+  }, [refreshPrograms])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const handleRefresh = () => {
+      void refreshPrograms()
+    }
+
+    window.addEventListener(PROGRAMS_REFRESH_EVENT, handleRefresh)
+
+    return () => {
+      window.removeEventListener(PROGRAMS_REFRESH_EVENT, handleRefresh)
+    }
+  }, [refreshPrograms])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const modalElement = document.getElementById('programModal')
+    const titleElement = document.getElementById('programModalLabel')
+    const submitButton = document.getElementById('program-submit') as HTMLButtonElement | null
+    const form = document.getElementById('program-form') as HTMLFormElement | null
+    const codeInput = document.getElementById('program-code') as HTMLInputElement | null
+    const nameInput = document.getElementById('program-name') as HTMLInputElement | null
+    const collegeSelect = document.getElementById('program-college') as HTMLSelectElement | null
+
+    if (!modalElement || !titleElement || !submitButton || !form) {
+      return
+    }
+
+    const populateCollegeSelect = async (selectedCollegeCode?: string) => {
+      if (!collegeSelect) {
+        return
+      }
+
+      collegeSelect.disabled = true
+
+      try {
+        const collegeCodes = await fetchCollegeCodes()
+        setCollegeOptions(collegeSelect, collegeCodes, selectedCollegeCode)
+      } finally {
+        collegeSelect.disabled = false
+      }
+    }
+
+    const handleShow = async (event: Event) => {
+      const customEvent = event as Event & { relatedTarget?: HTMLElement | null }
+      const trigger = customEvent.relatedTarget
+      const mode = trigger?.dataset.modalMode === 'edit' ? 'edit' : 'add'
+
+      if (mode === 'add') {
+        form.dataset.mode = 'add'
+        form.dataset.programCode = ''
+        form.dataset.programCollegeCode = ''
+        titleElement.textContent = 'Add Program'
+        submitButton.textContent = 'Add Program'
+
+        if (codeInput) {
+          codeInput.readOnly = false
+          codeInput.value = ''
+        }
+
+        if (nameInput) {
+          nameInput.value = ''
+        }
+
+        if (collegeSelect) {
+          collegeSelect.value = ''
+        }
+
+        await populateCollegeSelect('')
+        return
+      }
+
+      form.dataset.mode = 'edit'
+      form.dataset.programCode = ''
+      titleElement.textContent = 'Edit Program'
+      submitButton.textContent = 'Save Changes'
+
+      const programCode = normalizeProgramCode(trigger?.dataset.programCode)
+      const programName = trigger?.dataset.programName ?? ''
+
+      if (codeInput) {
+        codeInput.readOnly = true
+        codeInput.value = programCode
+      }
+
+      if (nameInput) {
+        nameInput.value = programName
+      }
+
+      let selectedCollegeCode = getPrimaryCollegeCode(trigger?.dataset.collegeCode)
+
+      if (programCode) {
+        try {
+          const codes = await fetchProgramCollegeCodes(programCode)
+          if (codes.length > 0) {
+            selectedCollegeCode = codes[0]
+          }
+        } catch (error) {
+          console.error('Failed to refresh program college link:', error)
+        }
+      }
+
+      form.dataset.programCode = programCode
+      form.dataset.programCollegeCode = selectedCollegeCode
+
+      await populateCollegeSelect(selectedCollegeCode)
+    }
+
+    const handleSubmit = async (event: Event) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (!form.checkValidity()) {
+        form.reportValidity()
+        return
+      }
+
+      const programCode = codeInput?.value.trim() ?? ''
+      const programName = nameInput?.value.trim() ?? ''
+      const collegeCode = collegeSelect?.value ?? ''
+      const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+
+      if (!programCode) {
+        console.error('Program code is required to save changes.')
+        return
+      }
+
+      submitButton.setAttribute('disabled', 'true')
+
+      try {
+        if (mode === 'add') {
+          await createProgram({ code: programCode, name: programName })
+          await syncProgramCollegeLink(programCode, '', collegeCode)
+        } else {
+          await updateProgram(programCode, { name: programName })
+          await syncProgramCollegeLink(
+            programCode,
+            form.dataset.programCollegeCode ?? '',
+            collegeCode,
+          )
+        }
+
+        form.dataset.programCollegeCode = normalizeCollegeCode(collegeCode)
+        window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        closeModal(modalElement)
+      } catch (error) {
+        console.error('Failed to save program:', error)
+      } finally {
+        submitButton.removeAttribute('disabled')
+      }
+    }
+
+    modalElement.addEventListener('show.bs.modal', handleShow)
+    form.addEventListener('submit', handleSubmit)
+
+    return () => {
+      modalElement.removeEventListener('show.bs.modal', handleShow)
+      form.removeEventListener('submit', handleSubmit)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const modalElement = document.getElementById('deleteProgramModal')
+    const hiddenInput = document.getElementById('delete-program-id') as HTMLInputElement | null
+    const warningElement = document.getElementById('delete-program-warning')
+    const confirmButton = document.getElementById('confirm-delete-program') as HTMLButtonElement | null
+
+    if (!modalElement || !hiddenInput || !warningElement || !confirmButton) {
+      return
+    }
+
+    const handleShow = (event: Event) => {
+      const customEvent = event as Event & { relatedTarget?: HTMLElement | null }
+      const trigger = customEvent.relatedTarget
+      const programCode = trigger?.dataset.programCode ?? ''
+      const programName = trigger?.dataset.programName ?? ''
+
+      hiddenInput.value = programCode
+      warningElement.textContent = programCode
+        ? `Program: ${programName || 'Unknown'} (${programCode})`
+        : ''
+    }
+
+    const handleConfirm = async () => {
+      const programCode = hiddenInput.value.trim()
+
+      if (!programCode) {
+        console.error('Invalid program code for delete.')
+        return
+      }
+
+      confirmButton.setAttribute('disabled', 'true')
+
+      try {
+        await deleteProgram(programCode)
+        window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        closeModal(modalElement)
+      } catch (error) {
+        console.error('Failed to delete program:', error)
+      } finally {
+        confirmButton.removeAttribute('disabled')
+      }
+    }
+
+    modalElement.addEventListener('show.bs.modal', handleShow)
+    confirmButton.addEventListener('click', handleConfirm)
+
+    return () => {
+      modalElement.removeEventListener('show.bs.modal', handleShow)
+      confirmButton.removeEventListener('click', handleConfirm)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const modalElement = document.getElementById('programInfoModal')
+    const codeElement = document.getElementById('program-info-code')
+    const nameElement = document.getElementById('program-info-name')
+    const studentCountElement = document.getElementById('program-info-student-count')
+    const collegeCodeElement = document.getElementById('program-info-college-code')
+    const collegeNameElement = document.getElementById('program-info-college-name')
+
+    if (
+      !modalElement ||
+      !codeElement ||
+      !nameElement ||
+      !studentCountElement ||
+      !collegeCodeElement ||
+      !collegeNameElement
+    ) {
+      return
+    }
+
+    const handleShow = (event: Event) => {
+      const customEvent = event as Event & { relatedTarget?: HTMLElement | null }
+      const trigger = customEvent.relatedTarget
+
+      codeElement.textContent = trigger?.dataset.programCode ?? 'N/A'
+      nameElement.textContent = trigger?.dataset.programName ?? 'N/A'
+      const rawStudentCount = trigger?.dataset.programStudentCount ?? 'N/A'
+      studentCountElement.textContent = rawStudentCount === '0' ? 'N/A' : rawStudentCount
+      collegeCodeElement.textContent = trigger?.dataset.collegeCode ?? 'N/A'
+      collegeNameElement.textContent = trigger?.dataset.collegeName ?? 'N/A'
+    }
+
+    modalElement.addEventListener('show.bs.modal', handleShow)
+
+    return () => {
+      modalElement.removeEventListener('show.bs.modal', handleShow)
+    }
+  }, [])
+
+  const table = useReactTable({
+    data: programs,
+    columns,
+    autoResetPageIndex: false,
+    state: {
+      globalFilter,
+      sorting,
+      pagination,
+    },
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const rawFilter = String(filterValue ?? '').trim().toLowerCase()
+
+      if (!rawFilter) {
+        return true
+      }
+
+      const fieldValues = [
+        row.original.code,
+        row.original.programName,
+        row.original.collegeCode,
+        row.original.collegeName,
+        String(row.original.studentCount),
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase())
+
+      const combined = fieldValues.join(' ')
+      const combinedNoSpace = combined.replace(/\s+/g, '')
+      const filterNoSpace = rawFilter.replace(/\s+/g, '')
+      const tokens = rawFilter.split(/\s+/).filter(Boolean)
+
+      if (combinedNoSpace.includes(filterNoSpace)) {
+        return true
+      }
+
+      return tokens.every((token) => combined.includes(token))
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  })
+
+  const totalItems = table.getFilteredRowModel().rows.length
+  const totalPages = Math.max(1, table.getPageCount())
+  const currentPage = table.getState().pagination.pageIndex + 1
+  const pageSize = table.getState().pagination.pageSize
+  const rangeStart = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const rangeEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageSize, totalItems)
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) {
+      return
+    }
+
+    table.setPageIndex(page - 1)
+  }
+
+  return {
+    table,
+    globalFilter,
+    setGlobalFilter,
+    isLoading,
+    loadError,
+    refreshPrograms,
+    currentPage,
+    totalPages,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+    handlePageChange,
+  }
+}

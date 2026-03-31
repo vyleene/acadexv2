@@ -1,18 +1,14 @@
-import { useMemo } from 'react'
 import {
 	ArrowPathIcon,
 	ArrowsUpDownIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
 	MagnifyingGlassIcon,
-	PencilSquareIcon,
 	PlusIcon,
-	TrashIcon,
 } from '@heroicons/react/24/outline'
-import { type ColumnDef, flexRender } from '@tanstack/react-table'
+import { type Table as ReactTable, flexRender } from '@tanstack/react-table'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
-import { useProgramTableController } from '../../../controllers/useProgramTableController'
-import { type ProgramRow } from '../../../models/ProgramTableModel'
+import { type ProgramRow } from '../../../models/ProgramModel'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
 function renderSortIcon(sortState: false | 'asc' | 'desc') {
@@ -27,58 +23,35 @@ function renderSortIcon(sortState: false | 'asc' | 'desc') {
 	return <ArrowsUpDownIcon className="table-sort-icon table-sort-icon--muted" aria-hidden="true" />
 }
 
-function ProgramTableComponent() {
-	const columns = useMemo<ColumnDef<ProgramRow>[]>(
-		() => [
-			{ accessorKey: 'code', header: 'Code' },
-			{ accessorKey: 'programName', header: 'Program Name' },
-			{ accessorKey: 'college', header: 'College' },
-			{
-				id: 'actions',
-				header: 'Actions',
-				enableSorting: false,
-				enableGlobalFilter: false,
-				cell: () => (
-					<div className="d-inline-flex gap-2">
-						<Button
-							type="button"
-							size="sm"
-							variant="outline-primary"
-							className="d-inline-flex align-items-center gap-1"
-							aria-label="Edit program"
-						>
-							<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							variant="outline-danger"
-							className="d-inline-flex align-items-center gap-1"
-							aria-label="Delete program"
-						>
-							<TrashIcon className="heroicon-url" aria-hidden="true" />
-						</Button>
-					</div>
-				),
-			},
-		],
-		[]
-	)
+type ProgramTableProps = {
+	table: ReactTable<ProgramRow>
+	globalFilter: string
+	setGlobalFilter: (value: string) => void
+	isLoading: boolean
+	loadError: string | null
+	refreshPrograms: () => void
+	currentPage: number
+	totalPages: number
+	totalItems: number
+	rangeStart: number
+	rangeEnd: number
+	handlePageChange: (page: number) => void
+}
 
-	const {
-		table,
-		globalFilter,
-		setGlobalFilter,
-		isLoading,
-		loadError,
-		refreshPrograms,
-		currentPage,
-		totalPages,
-		totalItems,
-		rangeStart,
-		rangeEnd,
-		handlePageChange,
-	} = useProgramTableController({ columns })
+function ProgramTableComponent({
+	table,
+	globalFilter,
+	setGlobalFilter,
+	isLoading,
+	loadError,
+	refreshPrograms,
+	currentPage,
+	totalPages,
+	totalItems,
+	rangeStart,
+	rangeEnd,
+	handlePageChange,
+}: ProgramTableProps) {
 
 	const emptyStateMessage = loadError
 		? `Failed to load programs: ${loadError}`
@@ -117,6 +90,9 @@ function ProgramTableComponent() {
 						className="d-inline-flex align-items-center gap-2"
 						id="btn-add-program"
 						type="button"
+						data-bs-toggle="modal"
+						data-bs-target="#programModal"
+						data-modal-mode="add"
 					>
 						<PlusIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -179,7 +155,19 @@ function ProgramTableComponent() {
 				<tbody>
 					{table.getRowModel().rows.length > 0 ? (
 						table.getRowModel().rows.map((row) => (
-							<tr key={row.id}>
+							<tr
+								key={row.id}
+								className="table-row-clickable"
+								role="button"
+								tabIndex={0}
+								data-bs-toggle="modal"
+								data-bs-target="#programInfoModal"
+								data-program-code={row.original.code}
+								data-program-name={row.original.programName}
+								data-program-student-count={String(row.original.studentCount)}
+								data-college-code={row.original.collegeCode}
+								data-college-name={row.original.collegeName}
+							>
 								{row.getVisibleCells().map((cell) => (
 									<td key={cell.id} className={cell.column.id === 'actions' ? 'text-center' : undefined}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}

@@ -1,7 +1,6 @@
 import { BuildingLibraryIcon, ClipboardDocumentIcon, DocumentTextIcon, TagIcon } from '@heroicons/react/24/outline'
 import { Button, CloseButton, Form, InputGroup, Modal } from 'react-bootstrap'
 
-
 function AddProgramModalComponent() {
   return (
     <div className="modal fade" id="programModal" tabIndex={-1} aria-labelledby="programModalLabel" aria-hidden="true">
