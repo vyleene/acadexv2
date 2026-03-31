@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   DEFAULT_PANEL,
   DEFAULT_THEME,
   type AppViewProps,
   type PanelKey,
   type ThemeMode,
+  type ToastItem,
+  type ToastPayload,
 } from '../models/AppModel'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { invoke, isTauri } from '@tauri-apps/api/core'
@@ -44,6 +46,8 @@ export function AppController(): AppViewProps {
   const [theme, setTheme] = useState<ThemeMode>(() => resolveInitialTheme())
   const [showSplash, setShowSplash] = useState(true)
   const [hideSplash, setHideSplash] = useState(false)
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+  const toastIdRef = useRef(0)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-bs-theme', theme)
@@ -92,14 +96,34 @@ export function AppController(): AppViewProps {
     void runWindowAction((appWindow) => appWindow.close())
   }
 
+  const onShowToast = (toast: ToastPayload) => {
+    const nextId = toast.id ?? `toast-${Date.now()}-${toastIdRef.current}`
+    toastIdRef.current += 1
+
+    setToasts((previousToasts) => [
+      ...previousToasts,
+      {
+        ...toast,
+        id: nextId,
+      },
+    ])
+  }
+
+  const onDismissToast = (id: string) => {
+    setToasts((previousToasts) => previousToasts.filter((toast) => toast.id !== id))
+  }
+
   return {
     activePanel,
     theme,
     showSplash,
     hideSplash,
+    toasts,
     onToggleTheme,
     onSelectPanel,
     onMinimizeWindow,
     onCloseWindow,
+    onShowToast,
+    onDismissToast,
   }
 }
