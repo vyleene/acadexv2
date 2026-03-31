@@ -1,18 +1,14 @@
-import { useMemo } from 'react'
 import {
 	ArrowPathIcon,
 	ArrowsUpDownIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
 	MagnifyingGlassIcon,
-	PencilSquareIcon,
 	PlusIcon,
-	TrashIcon,
 } from '@heroicons/react/24/outline'
-import { type ColumnDef, flexRender } from '@tanstack/react-table'
+import { type Table as ReactTable, flexRender } from '@tanstack/react-table'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
-import { useCollegeTableController } from '../../../controllers/useCollegeTableController'
-import { type CollegeRow } from '../../../models/CollegeTableModel'
+import { type CollegeRow } from '../../../models/CollegeModel'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
 function renderSortIcon(sortState: false | 'asc' | 'desc') {
@@ -27,57 +23,35 @@ function renderSortIcon(sortState: false | 'asc' | 'desc') {
 	return <ArrowsUpDownIcon className="table-sort-icon table-sort-icon--muted" aria-hidden="true" />
 }
 
-function CollegeTableComponent() {
-	const columns = useMemo<ColumnDef<CollegeRow>[]>(
-		() => [
-			{ accessorKey: 'code', header: 'Code' },
-			{ accessorKey: 'collegeName', header: 'College Name' },
-			{
-				id: 'actions',
-				header: 'Actions',
-				enableSorting: false,
-				enableGlobalFilter: false,
-				cell: () => (
-					<div className="d-inline-flex gap-2">
-						<Button
-							type="button"
-							size="sm"
-							variant="outline-primary"
-							className="d-inline-flex align-items-center gap-1"
-							aria-label="Edit college"
-						>
-							<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							variant="outline-danger"
-							className="d-inline-flex align-items-center gap-1"
-							aria-label="Delete college"
-						>
-							<TrashIcon className="heroicon-url" aria-hidden="true" />
-						</Button>
-					</div>
-				),
-			},
-		],
-		[]
-	)
+type CollegeTableProps = {
+	table: ReactTable<CollegeRow>
+	globalFilter: string
+	setGlobalFilter: (value: string) => void
+	isLoading: boolean
+	loadError: string | null
+	refreshColleges: () => void
+	currentPage: number
+	totalPages: number
+	totalItems: number
+	rangeStart: number
+	rangeEnd: number
+	handlePageChange: (page: number) => void
+}
 
-	const {
-		table,
-		globalFilter,
-		setGlobalFilter,
-		isLoading,
-		loadError,
-		refreshColleges,
-		currentPage,
-		totalPages,
-		totalItems,
-		rangeStart,
-		rangeEnd,
-		handlePageChange,
-	} = useCollegeTableController({ columns })
+function CollegeTableComponent({
+	table,
+	globalFilter,
+	setGlobalFilter,
+	isLoading,
+	loadError,
+	refreshColleges,
+	currentPage,
+	totalPages,
+	totalItems,
+	rangeStart,
+	rangeEnd,
+	handlePageChange,
+}: CollegeTableProps) {
 
 	const emptyStateMessage = loadError
 		? `Failed to load colleges: ${loadError}`
@@ -116,6 +90,9 @@ function CollegeTableComponent() {
 						className="d-inline-flex align-items-center gap-2"
 						id="btn-add-college"
 						type="button"
+						data-bs-toggle="modal"
+						data-bs-target="#collegeModal"
+						data-modal-mode="add"
 					>
 						<PlusIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -178,7 +155,18 @@ function CollegeTableComponent() {
 				<tbody>
 					{table.getRowModel().rows.length > 0 ? (
 						table.getRowModel().rows.map((row) => (
-							<tr key={row.id}>
+							<tr
+								key={row.id}
+								className="table-row-clickable"
+								role="button"
+								tabIndex={0}
+								data-bs-toggle="modal"
+								data-bs-target="#collegeInfoModal"
+								data-college-code={row.original.code}
+								data-college-name={row.original.collegeName}
+								data-college-program-count={String(row.original.programCount)}
+								data-college-student-count={String(row.original.studentCount)}
+							>
 								{row.getVisibleCells().map((cell) => (
 									<td key={cell.id} className={cell.column.id === 'actions' ? 'text-center' : undefined}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}

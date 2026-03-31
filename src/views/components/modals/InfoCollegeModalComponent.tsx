@@ -1,7 +1,6 @@
 import { BuildingLibraryIcon, ClipboardDocumentIcon, TagIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { CloseButton, Modal } from 'react-bootstrap'
 
-
 function InfoCollegeModalComponent() {
   return (
     <div
