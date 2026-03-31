@@ -24,6 +24,8 @@ import {
   syncProgramCollegeLink,
   updateProgram,
 } from '../models/ProgramModel'
+import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
+import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
 type UseProgramControllerProps = {
   columns: ColumnDef<ProgramRow>[]
@@ -293,6 +295,8 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
 
         form.dataset.programCollegeCode = normalizeCollegeCode(collegeCode)
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
         console.error('Failed to save program:', error)
@@ -349,6 +353,8 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
       try {
         await deleteProgram(programCode)
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
         console.error('Failed to delete program:', error)

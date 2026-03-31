@@ -19,6 +19,8 @@ import {
   normalizeCollegeCode,
   updateCollege,
 } from '../models/CollegeModel'
+import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
+import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
 type UseCollegeControllerProps = {
   columns: ColumnDef<CollegeRow>[]
@@ -212,6 +214,8 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
         }
 
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
         console.error('Failed to save college:', error)
@@ -268,6 +272,8 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
       try {
         await deleteCollege(collegeCode)
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
         console.error('Failed to delete college:', error)

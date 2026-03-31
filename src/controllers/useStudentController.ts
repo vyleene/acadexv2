@@ -28,6 +28,8 @@ import {
   syncStudentProgramLink,
   updateStudent,
 } from '../models/StudentModel'
+import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
+import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 
 type UseStudentControllerProps = {
   columns: ColumnDef<StudentRow>[]
@@ -378,6 +380,8 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
 
         form.dataset.studentProgramCode = normalizeProgramCode(programCode)
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
         console.error('Failed to save student:', error)
@@ -437,6 +441,8 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
       try {
         await deleteStudent(studentId)
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
+        window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
         console.error('Failed to delete student:', error)
