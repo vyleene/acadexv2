@@ -377,14 +377,12 @@ html[data-bs-theme='dark'] .app-nav__item.is-active .heroicon-url {
 .directory-panel {
   display: none;
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .directory-panel.is-active {
   display: block;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .table {
@@ -744,6 +742,14 @@ html[data-bs-theme='dark'] .btn-outline-primary.active {
   background-color: var(--app-surface);
   border-color: var(--app-border);
   color: var(--app-text);
+}
+
+.modal-backdrop {
+  z-index: 1390;
+}
+
+.modal {
+  z-index: 1400;
 }
 
 .student-info__header {
