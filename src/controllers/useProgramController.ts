@@ -24,6 +24,7 @@ import {
   syncProgramCollegeLink,
   updateProgram,
 } from '../models/ProgramModel'
+import { dispatchToast } from '../models/AppModel'
 import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
@@ -81,6 +82,10 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function setCollegeOptions(
   selectElement: HTMLSelectElement,
   collegeCodes: string[],
@@ -134,9 +139,16 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
       const rows = await fetchProgramRows()
       setPrograms(rows)
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = getErrorMessage(error)
       setLoadError(message)
       setPrograms([])
+      dispatchToast({
+        type: 'error',
+        title: 'Programs',
+        message: message
+          ? `Program: Failed to load programs. ${message}`
+          : 'Program: Failed to load programs.',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -265,6 +277,11 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
 
       if (!form.checkValidity()) {
         form.reportValidity()
+        dispatchToast({
+          type: 'warning',
+          title: 'Program form incomplete',
+          message: 'Program: Please complete the required fields before saving.',
+        })
         return
       }
 
@@ -272,9 +289,16 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
       const programName = nameInput?.value.trim() ?? ''
       const collegeCode = collegeSelect?.value ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+      const actionVerb = mode === 'add' ? 'add' : 'update'
+      const actionResult = mode === 'add' ? 'added' : 'updated'
 
       if (!programCode) {
         console.error('Program code is required to save changes.')
+        dispatchToast({
+          type: 'error',
+          title: 'Program code required',
+          message: 'Program: Enter a program code before saving.',
+        })
         return
       }
 
@@ -293,13 +317,30 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
           )
         }
 
+        const programLabel = programName ? `${programName} (${programCode})` : programCode
+        dispatchToast({
+          type: 'success',
+          title: `Program ${actionResult}`,
+          message: programLabel
+            ? `Program: ${programLabel} was ${actionResult}.`
+            : `Program: Program was ${actionResult}.`,
+        })
+
         form.dataset.programCollegeCode = normalizeCollegeCode(collegeCode)
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
+        const message = getErrorMessage(error)
         console.error('Failed to save program:', error)
+        dispatchToast({
+          type: 'error',
+          title: `Program ${actionVerb} failed`,
+          message: message
+            ? `Program: Unable to ${actionVerb} program. ${message}`
+            : `Program: Unable to ${actionVerb} program.`,
+        })
       } finally {
         submitButton.removeAttribute('disabled')
       }
@@ -345,6 +386,11 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
 
       if (!programCode) {
         console.error('Invalid program code for delete.')
+        dispatchToast({
+          type: 'error',
+          title: 'Invalid program code',
+          message: 'Program: Unable to delete because the code is invalid.',
+        })
         return
       }
 
@@ -352,12 +398,27 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
 
       try {
         await deleteProgram(programCode)
+        dispatchToast({
+          type: 'success',
+          title: 'Program deleted',
+          message: programCode
+            ? `Program: ${programCode} was deleted.`
+            : 'Program: Program was deleted.',
+        })
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
+        const message = getErrorMessage(error)
         console.error('Failed to delete program:', error)
+        dispatchToast({
+          type: 'error',
+          title: 'Program delete failed',
+          message: message
+            ? `Program: Unable to delete program. ${message}`
+            : 'Program: Unable to delete program.',
+        })
       } finally {
         confirmButton.removeAttribute('disabled')
       }

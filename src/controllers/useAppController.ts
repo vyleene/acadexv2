@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   DEFAULT_PANEL,
   DEFAULT_THEME,
+  TOAST_EVENT,
   type AppViewProps,
   type PanelKey,
   type ThemeMode,
@@ -96,7 +97,7 @@ export function AppController(): AppViewProps {
     void runWindowAction((appWindow) => appWindow.close())
   }
 
-  const onShowToast = (toast: ToastPayload) => {
+  const onShowToast = useCallback((toast: ToastPayload) => {
     const nextId = toast.id ?? `toast-${Date.now()}-${toastIdRef.current}`
     toastIdRef.current += 1
 
@@ -107,11 +108,32 @@ export function AppController(): AppViewProps {
         id: nextId,
       },
     ])
-  }
+  }, [])
 
   const onDismissToast = (id: string) => {
     setToasts((previousToasts) => previousToasts.filter((toast) => toast.id !== id))
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const handleToastEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<ToastPayload>
+      if (!customEvent.detail) {
+        return
+      }
+
+      onShowToast(customEvent.detail)
+    }
+
+    window.addEventListener(TOAST_EVENT, handleToastEvent)
+
+    return () => {
+      window.removeEventListener(TOAST_EVENT, handleToastEvent)
+    }
+  }, [onShowToast])
 
   return {
     activePanel,

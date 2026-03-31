@@ -19,6 +19,7 @@ import {
   normalizeCollegeCode,
   updateCollege,
 } from '../models/CollegeModel'
+import { dispatchToast } from '../models/AppModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
@@ -76,6 +77,10 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function formatCount(value?: string) {
   if (!value || value === '0') {
     return 'N/A'
@@ -103,9 +108,16 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
       const rows = await fetchCollegeRows()
       setColleges(rows)
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = getErrorMessage(error)
       setLoadError(message)
       setColleges([])
+      dispatchToast({
+        type: 'error',
+        title: 'Colleges',
+        message: message
+          ? `College: Failed to load colleges. ${message}`
+          : 'College: Failed to load colleges.',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -192,15 +204,27 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
 
       if (!form.checkValidity()) {
         form.reportValidity()
+        dispatchToast({
+          type: 'warning',
+          title: 'College form incomplete',
+          message: 'College: Please complete the required fields before saving.',
+        })
         return
       }
 
       const collegeCode = codeInput?.value.trim() ?? ''
       const collegeName = nameInput?.value.trim() ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+      const actionVerb = mode === 'add' ? 'add' : 'update'
+      const actionResult = mode === 'add' ? 'added' : 'updated'
 
       if (!collegeCode) {
         console.error('College code is required to save changes.')
+        dispatchToast({
+          type: 'error',
+          title: 'College code required',
+          message: 'College: Enter a college code before saving.',
+        })
         return
       }
 
@@ -213,12 +237,29 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
           await updateCollege(collegeCode, { name: collegeName })
         }
 
+        const collegeLabel = collegeName ? `${collegeName} (${collegeCode})` : collegeCode
+        dispatchToast({
+          type: 'success',
+          title: `College ${actionResult}`,
+          message: collegeLabel
+            ? `College: ${collegeLabel} was ${actionResult}.`
+            : `College: College was ${actionResult}.`,
+        })
+
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
+        const message = getErrorMessage(error)
         console.error('Failed to save college:', error)
+        dispatchToast({
+          type: 'error',
+          title: `College ${actionVerb} failed`,
+          message: message
+            ? `College: Unable to ${actionVerb} college. ${message}`
+            : `College: Unable to ${actionVerb} college.`,
+        })
       } finally {
         submitButton.removeAttribute('disabled')
       }
@@ -264,6 +305,11 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
 
       if (!collegeCode) {
         console.error('Invalid college code for delete.')
+        dispatchToast({
+          type: 'error',
+          title: 'Invalid college code',
+          message: 'College: Unable to delete because the code is invalid.',
+        })
         return
       }
 
@@ -271,12 +317,27 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
 
       try {
         await deleteCollege(collegeCode)
+        dispatchToast({
+          type: 'success',
+          title: 'College deleted',
+          message: collegeCode
+            ? `College: ${collegeCode} was deleted.`
+            : 'College: College was deleted.',
+        })
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
+        const message = getErrorMessage(error)
         console.error('Failed to delete college:', error)
+        dispatchToast({
+          type: 'error',
+          title: 'College delete failed',
+          message: message
+            ? `College: Unable to delete college. ${message}`
+            : 'College: Unable to delete college.',
+        })
       } finally {
         confirmButton.removeAttribute('disabled')
       }

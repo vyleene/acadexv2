@@ -28,6 +28,7 @@ import {
   syncStudentProgramLink,
   updateStudent,
 } from '../models/StudentModel'
+import { dispatchToast } from '../models/AppModel'
 import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 
@@ -83,6 +84,10 @@ function closeModal(modalElement: HTMLElement) {
   modalElement.style.display = 'none'
   document.body.classList.remove('modal-open')
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 function populateIdYearOptions(
@@ -159,9 +164,16 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
       const rows = await fetchStudentRows()
       setStudents(rows)
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = getErrorMessage(error)
       setLoadError(message)
       setStudents([])
+      dispatchToast({
+        type: 'error',
+        title: 'Students',
+        message: message
+          ? `Student: Failed to load students. ${message}`
+          : 'Student: Failed to load students.',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -331,6 +343,11 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
 
       if (!form.checkValidity()) {
         form.reportValidity()
+        dispatchToast({
+          type: 'warning',
+          title: 'Student form incomplete',
+          message: 'Student: Please complete the required fields before saving.',
+        })
         return
       }
 
@@ -340,6 +357,11 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
 
       if (!studentId) {
         console.error('Invalid student ID format. Expected YYYY-NNNN.')
+        dispatchToast({
+          type: 'error',
+          title: 'Invalid student ID',
+          message: 'Student: ID must follow the YYYY-NNNN format.',
+        })
         return
       }
 
@@ -349,6 +371,8 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
       const gender = genderSelect?.value ?? ''
       const programCode = programSelect?.value ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+      const actionVerb = mode === 'add' ? 'add' : 'update'
+      const actionResult = mode === 'add' ? 'added' : 'updated'
 
       submitButton.setAttribute('disabled', 'true')
 
@@ -378,13 +402,29 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
           )
         }
 
+        const studentName = `${firstName} ${lastName}`.trim()
+        const studentLabel = studentName || formatStudentId(studentId)
+        dispatchToast({
+          type: 'success',
+          title: `Student ${actionResult}`,
+          message: `Student: ${studentLabel} was ${actionResult}.`,
+        })
+
         form.dataset.studentProgramCode = normalizeProgramCode(programCode)
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
+        const message = getErrorMessage(error)
         console.error('Failed to save student:', error)
+        dispatchToast({
+          type: 'error',
+          title: `Student ${actionVerb} failed`,
+          message: message
+            ? `Student: Unable to ${actionVerb} student. ${message}`
+            : `Student: Unable to ${actionVerb} student.`,
+        })
       } finally {
         submitButton.removeAttribute('disabled')
       }
@@ -433,6 +473,11 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
 
       if (!Number.isFinite(studentId)) {
         console.error('Invalid student id for delete:', studentIdRaw)
+        dispatchToast({
+          type: 'error',
+          title: 'Invalid student ID',
+          message: 'Student: Unable to delete because the ID is invalid.',
+        })
         return
       }
 
@@ -440,12 +485,26 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
 
       try {
         await deleteStudent(studentId)
+        const studentLabel = formatStudentId(studentId)
+        dispatchToast({
+          type: 'success',
+          title: 'Student deleted',
+          message: `Student: ${studentLabel} was deleted.`,
+        })
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
+        const message = getErrorMessage(error)
         console.error('Failed to delete student:', error)
+        dispatchToast({
+          type: 'error',
+          title: 'Student delete failed',
+          message: message
+            ? `Student: Unable to delete student. ${message}`
+            : 'Student: Unable to delete student.',
+        })
       } finally {
         confirmButton.removeAttribute('disabled')
       }

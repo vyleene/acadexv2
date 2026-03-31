@@ -4,6 +4,7 @@ export type ToastType = 'success' | 'warning' | 'error'
 
 export const DEFAULT_PANEL: PanelKey = 'students'
 export const DEFAULT_THEME: ThemeMode = 'dark'
+export const TOAST_EVENT = 'app:toast'
 
 export type ToastItem = {
   id: string
@@ -14,6 +15,14 @@ export type ToastItem = {
 }
 
 export type ToastPayload = Omit<ToastItem, 'id'> & { id?: string }
+
+export function dispatchToast(toast: ToastPayload) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent<ToastPayload>(TOAST_EVENT, { detail: toast }))
+}
 
 export interface AppViewModel {
   activePanel: PanelKey
