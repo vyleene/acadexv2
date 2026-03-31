@@ -1,18 +1,14 @@
-import { useMemo } from 'react'
 import {
 	ArrowPathIcon,
 	ArrowsUpDownIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
 	MagnifyingGlassIcon,
-	PencilSquareIcon,
-	TrashIcon,
 	UserPlusIcon,
 } from '@heroicons/react/24/outline'
-import { type ColumnDef, flexRender } from '@tanstack/react-table'
+import { type Table as ReactTable, flexRender } from '@tanstack/react-table'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
-import { useStudentTableController } from '../../../controllers/useStudentTableController'
-import { type StudentRow } from '../../../models/StudentTableModel'
+import { type StudentRow } from '../../../models/StudentModel'
 import DirectoryTablePaginationComponent from './DirectoryTablePaginationComponent'
 
 function renderSortIcon(sortState: false | 'asc' | 'desc') {
@@ -27,61 +23,35 @@ function renderSortIcon(sortState: false | 'asc' | 'desc') {
 	return <ArrowsUpDownIcon className="table-sort-icon table-sort-icon--muted" aria-hidden="true" />
 }
 
-function StudentTableComponent() {
-	const columns = useMemo<ColumnDef<StudentRow>[]>(
-		() => [
-			{ accessorKey: 'id', header: 'ID' },
-			{ accessorKey: 'firstName', header: 'First Name' },
-			{ accessorKey: 'lastName', header: 'Last Name' },
-			{ accessorKey: 'programCode', header: 'Program Code' },
-			{ accessorKey: 'year', header: 'Year' },
-			{ accessorKey: 'gender', header: 'Gender' },
-			{
-				id: 'actions',
-				header: 'Actions',
-				enableSorting: false,
-				enableGlobalFilter: false,
-				cell: () => (
-					<div className="d-inline-flex gap-2">
-						<Button
-							type="button"
-							size="sm"
-							variant="outline-primary"
-							className="d-inline-flex align-items-center gap-1"
-							aria-label="Edit student"
-						>
-							<PencilSquareIcon className="heroicon-url" aria-hidden="true" />
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							variant="outline-danger"
-							className="d-inline-flex align-items-center gap-1"
-							aria-label="Delete student"
-						>
-							<TrashIcon className="heroicon-url" aria-hidden="true" />
-						</Button>
-					</div>
-				),
-			},
-		],
-		[]
-	)
+type StudentTableProps = {
+	table: ReactTable<StudentRow>
+	globalFilter: string
+	setGlobalFilter: (value: string) => void
+	isLoading: boolean
+	loadError: string | null
+	refreshStudents: () => void
+	currentPage: number
+	totalPages: number
+	totalItems: number
+	rangeStart: number
+	rangeEnd: number
+	handlePageChange: (page: number) => void
+}
 
-	const {
-		table,
-		globalFilter,
-		setGlobalFilter,
-		isLoading,
-		loadError,
-		refreshStudents,
-		currentPage,
-		totalPages,
-		totalItems,
-		rangeStart,
-		rangeEnd,
-		handlePageChange,
-	} = useStudentTableController({ columns })
+function StudentTableComponent({
+	table,
+	globalFilter,
+	setGlobalFilter,
+	isLoading,
+	loadError,
+	refreshStudents,
+	currentPage,
+	totalPages,
+	totalItems,
+	rangeStart,
+	rangeEnd,
+	handlePageChange,
+}: StudentTableProps) {
 
 	const emptyStateMessage = loadError
 		? `Failed to load students: ${loadError}`
@@ -120,6 +90,9 @@ function StudentTableComponent() {
 						className="d-inline-flex align-items-center gap-2"
 						id="btn-add-student"
 						type="button"
+						data-bs-toggle="modal"
+						data-bs-target="#studentModal"
+						data-modal-mode="add"
 					>
 						<UserPlusIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -182,7 +155,22 @@ function StudentTableComponent() {
 				<tbody>
 					{table.getRowModel().rows.length > 0 ? (
 						table.getRowModel().rows.map((row) => (
-							<tr key={row.id}>
+							<tr
+								key={row.id}
+								className="table-row-clickable"
+								role="button"
+								tabIndex={0}
+								data-bs-toggle="modal"
+								data-bs-target="#studentInfoModal"
+								data-student-id={String(row.original.id)}
+								data-student-name={`${row.original.firstName} ${row.original.lastName}`}
+								data-student-gender={row.original.gender}
+								data-student-year={row.original.year}
+								data-student-program-code={row.original.programCode}
+								data-student-program-name={row.original.programCode}
+								data-student-college-code={row.original.collegeCode}
+								data-student-college-name={row.original.collegeName}
+							>
 								{row.getVisibleCells().map((cell) => (
 									<td key={cell.id} className={cell.column.id === 'actions' ? 'text-center' : undefined}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}

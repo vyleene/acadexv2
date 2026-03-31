@@ -1,7 +1,6 @@
 import { AcademicCapIcon, CalendarDaysIcon, IdentificationIcon, UserIcon, UserPlusIcon, UsersIcon } from '@heroicons/react/24/outline'
 import { Button, CloseButton, Col, Form, InputGroup, Modal, Row } from 'react-bootstrap'
 
-
 function AddStudentModalComponent() {
   return (
     <div className="modal fade" id="studentModal" tabIndex={-1} aria-labelledby="studentModalLabel" aria-hidden="true">
