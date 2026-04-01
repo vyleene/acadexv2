@@ -609,13 +609,30 @@ html[data-bs-theme='dark'] .theme-icon--moon {
   display: none;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 0.6rem;
   background: var(--app-overlay);
   backdrop-filter: none;
   z-index: 10;
 }
 
-.table-shell.is-loading .table-overlay {
+.table-shell.is-refreshing .table-overlay {
   display: flex;
+}
+
+.table-overlay__spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--app-text) 25%, transparent);
+  border-top-color: var(--app-accent-strong);
+  animation: table-spinner 0.8s linear infinite;
+}
+
+@keyframes table-spinner {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spinner-border {

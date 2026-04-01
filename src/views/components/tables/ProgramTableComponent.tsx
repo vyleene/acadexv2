@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
 	ArrowPathIcon,
 	ArrowsUpDownIcon,
@@ -29,7 +30,7 @@ type ProgramTableProps = {
 	setGlobalFilter: (value: string) => void
 	isLoading: boolean
 	loadError: string | null
-	refreshPrograms: () => void
+	refreshPrograms: () => Promise<void>
 	currentPage: number
 	totalPages: number
 	totalItems: number
@@ -52,6 +53,20 @@ function ProgramTableComponent({
 	rangeEnd,
 	handlePageChange,
 }: ProgramTableProps) {
+	const [isRefreshing, setIsRefreshing] = useState(false)
+
+	const handleRefresh = async () => {
+		if (isRefreshing || isLoading) {
+			return
+		}
+
+		setIsRefreshing(true)
+		try {
+			await refreshPrograms()
+		} finally {
+			setIsRefreshing(false)
+		}
+	}
 
 	const emptyStateMessage = loadError
 		? `Failed to load programs: ${loadError}`
@@ -60,7 +75,7 @@ function ProgramTableComponent({
 			: 'No matching programs found.'
 
 	return (
-		<div className={`table-shell${isLoading ? ' is-loading' : ''}`}>
+		<div className={`table-shell${isLoading ? ' is-loading' : ''}${isRefreshing ? ' is-refreshing' : ''}`}>
 			<div className="table-toolbar">
 				<div className="table-toolbar__search">
 					<Form.Label htmlFor="programsSearch" visuallyHidden>
@@ -103,9 +118,9 @@ function ProgramTableComponent({
 						type="button"
 						aria-label="Refresh programs"
 						onClick={() => {
-							void refreshPrograms()
+							void handleRefresh()
 						}}
-						disabled={isLoading}
+						disabled={isLoading || isRefreshing}
 					>
 						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -191,6 +206,15 @@ function ProgramTableComponent({
 				rangeEnd={rangeEnd}
 				onPageChange={handlePageChange}
 			/>
+
+			<div
+				className="table-overlay"
+				role="status"
+				aria-live="polite"
+				aria-hidden={!isRefreshing}
+			>
+				<div className="table-overlay__spinner" aria-hidden="true" />
+			</div>
 		</div>
 	)
 }

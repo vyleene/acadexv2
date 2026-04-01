@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
 	ArrowPathIcon,
 	ArrowsUpDownIcon,
@@ -29,7 +30,7 @@ type CollegeTableProps = {
 	setGlobalFilter: (value: string) => void
 	isLoading: boolean
 	loadError: string | null
-	refreshColleges: () => void
+	refreshColleges: () => Promise<void>
 	currentPage: number
 	totalPages: number
 	totalItems: number
@@ -52,6 +53,20 @@ function CollegeTableComponent({
 	rangeEnd,
 	handlePageChange,
 }: CollegeTableProps) {
+	const [isRefreshing, setIsRefreshing] = useState(false)
+
+	const handleRefresh = async () => {
+		if (isRefreshing || isLoading) {
+			return
+		}
+
+		setIsRefreshing(true)
+		try {
+			await refreshColleges()
+		} finally {
+			setIsRefreshing(false)
+		}
+	}
 
 	const emptyStateMessage = loadError
 		? `Failed to load colleges: ${loadError}`
@@ -60,7 +75,7 @@ function CollegeTableComponent({
 			: 'No matching colleges found.'
 
 	return (
-		<div className={`table-shell${isLoading ? ' is-loading' : ''}`}>
+		<div className={`table-shell${isLoading ? ' is-loading' : ''}${isRefreshing ? ' is-refreshing' : ''}`}>
 			<div className="table-toolbar">
 				<div className="table-toolbar__search">
 					<Form.Label htmlFor="collegesSearch" visuallyHidden>
@@ -103,9 +118,9 @@ function CollegeTableComponent({
 						type="button"
 						aria-label="Refresh colleges"
 						onClick={() => {
-							void refreshColleges()
+							void handleRefresh()
 						}}
-						disabled={isLoading}
+						disabled={isLoading || isRefreshing}
 					>
 						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
 					</Button>
@@ -190,6 +205,15 @@ function CollegeTableComponent({
 				rangeEnd={rangeEnd}
 				onPageChange={handlePageChange}
 			/>
+
+			<div
+				className="table-overlay"
+				role="status"
+				aria-live="polite"
+				aria-hidden={!isRefreshing}
+			>
+				<div className="table-overlay__spinner" aria-hidden="true" />
+			</div>
 		</div>
 	)
 }
