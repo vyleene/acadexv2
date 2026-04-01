@@ -13,13 +13,17 @@ import {
   COLLEGE_ROWS_PER_PAGE,
   COLLEGES_REFRESH_EVENT,
   type CollegeRow,
+  normalizeCollegeCode,
+} from '../models/CollegeModel'
+import {
   createCollege,
   deleteCollege,
   fetchCollegeRows,
-  normalizeCollegeCode,
   updateCollege,
-} from '../models/CollegeModel'
-import { dispatchLoadingStatus, dispatchToast } from '../models/AppModel'
+} from '../services/collegeService'
+import { useDirectoryData } from '../hooks/useDirectoryData'
+import { getErrorMessage } from '../utils/errors'
+import { dispatchToast } from '../models/AppModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
@@ -77,9 +81,6 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
-}
 
 function formatCount(value?: string) {
   if (!value || value === '0') {
@@ -96,54 +97,27 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
     pageIndex: 0,
     pageSize: COLLEGE_ROWS_PER_PAGE,
   })
-  const [colleges, setColleges] = useState<CollegeRow[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  const refreshColleges = useCallback(async () => {
-    setIsLoading(true)
-    setLoadError(null)
-
-    try {
-      const rows = await fetchCollegeRows()
-      setColleges(rows)
-      dispatchLoadingStatus({ key: 'colleges' })
-    } catch (error) {
-      const message = getErrorMessage(error)
-      setLoadError(message)
-      setColleges([])
-      dispatchLoadingStatus({ key: 'colleges', failed: true })
-      dispatchToast({
-        type: 'error',
-        title: 'Colleges',
-        message: message
-          ? `College: Failed to load colleges. ${message}`
-          : 'College: Failed to load colleges.',
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const handleLoadError = useCallback((message: string) => {
+    dispatchToast({
+      type: 'error',
+      title: 'Colleges',
+      message: message
+        ? `College: Failed to load colleges. ${message}`
+        : 'College: Failed to load colleges.',
+    })
   }, [])
 
-  useEffect(() => {
-    void refreshColleges()
-  }, [refreshColleges])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const handleRefresh = () => {
-      void refreshColleges()
-    }
-
-    window.addEventListener(COLLEGES_REFRESH_EVENT, handleRefresh)
-
-    return () => {
-      window.removeEventListener(COLLEGES_REFRESH_EVENT, handleRefresh)
-    }
-  }, [refreshColleges])
+  const {
+    rows: colleges,
+    isLoading,
+    loadError,
+    refresh: refreshColleges,
+  } = useDirectoryData<CollegeRow>({
+    fetcher: fetchCollegeRows,
+    refreshEvent: COLLEGES_REFRESH_EVENT,
+    loadingKey: 'colleges',
+    onError: handleLoadError,
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') {

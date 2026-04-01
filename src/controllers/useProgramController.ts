@@ -13,18 +13,22 @@ import {
   PROGRAM_ROWS_PER_PAGE,
   PROGRAMS_REFRESH_EVENT,
   type ProgramRow,
+  getPrimaryCollegeCode,
+  normalizeCollegeCode,
+  normalizeProgramCode,
+} from '../models/ProgramModel'
+import {
   createProgram,
   deleteProgram,
   fetchCollegeCodes,
   fetchProgramCollegeCodes,
   fetchProgramRows,
-  getPrimaryCollegeCode,
-  normalizeCollegeCode,
-  normalizeProgramCode,
   syncProgramCollegeLink,
   updateProgram,
-} from '../models/ProgramModel'
-import { dispatchLoadingStatus, dispatchToast } from '../models/AppModel'
+} from '../services/programService'
+import { useDirectoryData } from '../hooks/useDirectoryData'
+import { getErrorMessage } from '../utils/errors'
+import { dispatchToast } from '../models/AppModel'
 import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
@@ -82,9 +86,6 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
-}
 
 function setCollegeOptions(
   selectElement: HTMLSelectElement,
@@ -127,54 +128,27 @@ export function useProgramController({ columns }: UseProgramControllerProps) {
     pageIndex: 0,
     pageSize: PROGRAM_ROWS_PER_PAGE,
   })
-  const [programs, setPrograms] = useState<ProgramRow[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  const refreshPrograms = useCallback(async () => {
-    setIsLoading(true)
-    setLoadError(null)
-
-    try {
-      const rows = await fetchProgramRows()
-      setPrograms(rows)
-      dispatchLoadingStatus({ key: 'programs' })
-    } catch (error) {
-      const message = getErrorMessage(error)
-      setLoadError(message)
-      setPrograms([])
-      dispatchLoadingStatus({ key: 'programs', failed: true })
-      dispatchToast({
-        type: 'error',
-        title: 'Programs',
-        message: message
-          ? `Program: Failed to load programs. ${message}`
-          : 'Program: Failed to load programs.',
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const handleLoadError = useCallback((message: string) => {
+    dispatchToast({
+      type: 'error',
+      title: 'Programs',
+      message: message
+        ? `Program: Failed to load programs. ${message}`
+        : 'Program: Failed to load programs.',
+    })
   }, [])
 
-  useEffect(() => {
-    void refreshPrograms()
-  }, [refreshPrograms])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const handleRefresh = () => {
-      void refreshPrograms()
-    }
-
-    window.addEventListener(PROGRAMS_REFRESH_EVENT, handleRefresh)
-
-    return () => {
-      window.removeEventListener(PROGRAMS_REFRESH_EVENT, handleRefresh)
-    }
-  }, [refreshPrograms])
+  const {
+    rows: programs,
+    isLoading,
+    loadError,
+    refresh: refreshPrograms,
+  } = useDirectoryData<ProgramRow>({
+    fetcher: fetchProgramRows,
+    refreshEvent: PROGRAMS_REFRESH_EVENT,
+    loadingKey: 'programs',
+    onError: handleLoadError,
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') {

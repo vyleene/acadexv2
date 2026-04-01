@@ -14,21 +14,25 @@ import {
   STUDENTS_REFRESH_EVENT,
   type StudentRow,
   buildStudentId,
-  createStudent,
-  deleteStudent,
-  fetchProgramCodes,
-  fetchStudentProgramCode,
-  fetchStudentRows,
   formatGender,
   formatStudentId,
   formatYearLevel,
   getIdYearOptions,
   normalizeProgramCode,
   splitStudentId,
+} from '../models/StudentModel'
+import {
+  createStudent,
+  deleteStudent,
+  fetchProgramCodes,
+  fetchStudentProgramCode,
+  fetchStudentRows,
   syncStudentProgramLink,
   updateStudent,
-} from '../models/StudentModel'
-import { dispatchLoadingStatus, dispatchToast } from '../models/AppModel'
+} from '../services/studentService'
+import { useDirectoryData } from '../hooks/useDirectoryData'
+import { getErrorMessage } from '../utils/errors'
+import { dispatchToast } from '../models/AppModel'
 import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 
@@ -86,9 +90,6 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
-}
 
 function populateIdYearOptions(
   selectElement: HTMLSelectElement,
@@ -152,54 +153,27 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
     pageIndex: 0,
     pageSize: STUDENT_ROWS_PER_PAGE,
   })
-  const [students, setStudents] = useState<StudentRow[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  const refreshStudents = useCallback(async () => {
-    setIsLoading(true)
-    setLoadError(null)
-
-    try {
-      const rows = await fetchStudentRows()
-      setStudents(rows)
-      dispatchLoadingStatus({ key: 'students' })
-    } catch (error) {
-      const message = getErrorMessage(error)
-      setLoadError(message)
-      setStudents([])
-      dispatchLoadingStatus({ key: 'students', failed: true })
-      dispatchToast({
-        type: 'error',
-        title: 'Students',
-        message: message
-          ? `Student: Failed to load students. ${message}`
-          : 'Student: Failed to load students.',
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const handleLoadError = useCallback((message: string) => {
+    dispatchToast({
+      type: 'error',
+      title: 'Students',
+      message: message
+        ? `Student: Failed to load students. ${message}`
+        : 'Student: Failed to load students.',
+    })
   }, [])
 
-  useEffect(() => {
-    void refreshStudents()
-  }, [refreshStudents])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const handleRefresh = () => {
-      void refreshStudents()
-    }
-
-    window.addEventListener(STUDENTS_REFRESH_EVENT, handleRefresh)
-
-    return () => {
-      window.removeEventListener(STUDENTS_REFRESH_EVENT, handleRefresh)
-    }
-  }, [refreshStudents])
+  const {
+    rows: students,
+    isLoading,
+    loadError,
+    refresh: refreshStudents,
+  } = useDirectoryData<StudentRow>({
+    fetcher: fetchStudentRows,
+    refreshEvent: STUDENTS_REFRESH_EVENT,
+    loadingKey: 'students',
+    onError: handleLoadError,
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') {
