@@ -125,12 +125,7 @@ export function AppController(): AppViewProps {
 
     hasHiddenLoadingRef.current = true
     splashElement.classList.add('hide')
-
-    const removeTimer = window.setTimeout(() => {
-      splashElement.remove()
-    }, 350)
-
-    loadingTimersRef.current.push(removeTimer)
+    splashElement.setAttribute('aria-hidden', 'true')
   }, [])
 
   useEffect(() => {
