@@ -650,6 +650,30 @@ html[data-bs-theme='dark'] .theme-icon--moon {
   color: var(--app-accent-strong);
 }
 
+html[data-bs-theme="dark"] .btn-outline-primary {
+    border-color: var(--app-accent-strong);
+    color: var(--app-accent-strong);
+    background: transparent;
+}
+
+html[data-bs-theme="dark"] .btn-outline-primary:hover {
+    background: var(--app-accent-soft);
+}
+
+html[data-bs-theme="dark"] .btn-outline-primary:focus,
+html[data-bs-theme="dark"] .btn-outline-primary:focus-visible {
+    background: var(--app-accent-soft);
+    color: var(--app-accent-strong);
+    box-shadow: none;
+}
+
+html[data-bs-theme="dark"] .btn-outline-primary:active,
+html[data-bs-theme="dark"] .btn-outline-primary.active {
+    border-color: var(--app-accent-strong);
+    background: var(--app-accent-strong);
+    color: #ffffff;
+    box-shadow: none;
+}
 
 .btn-outline-danger {
   border-color: var(--app-danger);
