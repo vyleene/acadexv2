@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type ColumnDef,
   type PaginationState,
@@ -174,6 +174,46 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
     loadingKey: 'students',
     onError: handleLoadError,
   })
+
+  const normalizedFilter = useMemo(() => {
+    const rawFilter = String(globalFilter ?? '').trim().toLowerCase()
+    const filterNoSpace = rawFilter.replace(/\s+/g, '')
+    const tokens = rawFilter.split(/\s+/).filter(Boolean)
+
+    return {
+      rawFilter,
+      filterNoSpace,
+      tokens,
+    }
+  }, [globalFilter])
+
+  const globalFilterFn = useCallback((row: { original: StudentRow }) => {
+    const { rawFilter, filterNoSpace, tokens } = normalizedFilter
+
+    if (!rawFilter) {
+      return true
+    }
+
+    const fieldValues = [
+      row.original.firstName,
+      row.original.lastName,
+      row.original.programCode,
+      row.original.gender,
+      row.original.year,
+      String(row.original.id),
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase())
+
+    const combined = fieldValues.join(' ')
+    const combinedNoSpace = combined.replace(/\s+/g, '')
+
+    if (combinedNoSpace.includes(filterNoSpace)) {
+      return true
+    }
+
+    return tokens.every((token) => combined.includes(token))
+  }, [normalizedFilter])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -557,55 +597,38 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
-    globalFilterFn: (row, _columnId, filterValue) => {
-      const rawFilter = String(filterValue ?? '').trim().toLowerCase()
-
-      if (!rawFilter) {
-        return true
-      }
-
-      const fieldValues = [
-        row.original.firstName,
-        row.original.lastName,
-        row.original.programCode,
-        row.original.gender,
-        row.original.year,
-        String(row.original.id),
-      ]
-        .filter(Boolean)
-        .map((value) => String(value).toLowerCase())
-
-      const combined = fieldValues.join(' ')
-      const combinedNoSpace = combined.replace(/\s+/g, '')
-      const filterNoSpace = rawFilter.replace(/\s+/g, '')
-      const tokens = rawFilter.split(/\s+/).filter(Boolean)
-
-      if (combinedNoSpace.includes(filterNoSpace)) {
-        return true
-      }
-
-      return tokens.every((token) => combined.includes(token))
-    },
+    globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   })
 
-  const totalItems = table.getFilteredRowModel().rows.length
-  const totalPages = Math.max(1, table.getPageCount())
-  const currentPage = table.getState().pagination.pageIndex + 1
-  const pageSize = table.getState().pagination.pageSize
-  const rangeStart = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1
-  const rangeEnd = totalItems === 0 ? 0 : Math.min(currentPage * pageSize, totalItems)
+  const paginationSummary = useMemo(() => {
+    const totalItems = table.getFilteredRowModel().rows.length
+    const totalPages = Math.max(1, table.getPageCount())
+    const currentPage = pagination.pageIndex + 1
+    const rangeStart = totalItems === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1
+    const rangeEnd = totalItems === 0 ? 0 : Math.min(currentPage * pagination.pageSize, totalItems)
 
-  const handlePageChange = (page: number) => {
+    return {
+      totalItems,
+      totalPages,
+      currentPage,
+      rangeStart,
+      rangeEnd,
+    }
+  }, [table, pagination.pageIndex, pagination.pageSize, globalFilter, students])
+
+  const { totalItems, totalPages, currentPage, rangeStart, rangeEnd } = paginationSummary
+
+  const handlePageChange = useCallback((page: number) => {
     if (page < 1 || page > totalPages) {
       return
     }
 
     table.setPageIndex(page - 1)
-  }
+  }, [table, totalPages])
 
   return {
     table,
