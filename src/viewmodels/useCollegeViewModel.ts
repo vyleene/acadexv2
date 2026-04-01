@@ -27,7 +27,7 @@ import { dispatchToast } from '../models/AppModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
-type UseCollegeControllerProps = {
+type UseCollegeViewModelProps = {
   columns: ColumnDef<CollegeRow>[]
 }
 
@@ -81,7 +81,6 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
-
 function formatCount(value?: string) {
   if (!value || value === '0') {
     return 'N/A'
@@ -90,7 +89,7 @@ function formatCount(value?: string) {
   return value
 }
 
-export function useCollegeController({ columns }: UseCollegeControllerProps) {
+export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([{ id: 'code', desc: false }])
   const [pagination, setPagination] = useState<PaginationState>({

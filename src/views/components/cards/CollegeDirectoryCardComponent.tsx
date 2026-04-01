@@ -6,7 +6,7 @@ import AddCollegeModalComponent from '../modals/AddCollegeModalComponent.tsx'
 import DeleteCollegeModalComponent from '../modals/DeleteCollegeModalComponent.tsx'
 import InfoCollegeModalComponent from '../modals/InfoCollegeModalComponent.tsx'
 import CollegeTableComponent from '../tables/CollegeTableComponent.tsx'
-import { useCollegeController } from '../../../controllers/useCollegeController'
+import { useCollegeViewModel } from '../../../viewmodels/useCollegeViewModel'
 import { type CollegeRow } from '../../../models/CollegeModel'
 
 
@@ -67,7 +67,7 @@ function CollegeDirectoryCardComponent({ isActive }: CollegeDirectoryCardProps) 
     []
   )
 
-  const collegeController = useCollegeController({ columns })
+  const collegeViewModel = useCollegeViewModel({ columns })
 
   return (
     <section className={sectionClassName} data-panel="colleges">
@@ -79,7 +79,7 @@ function CollegeDirectoryCardComponent({ isActive }: CollegeDirectoryCardProps) 
           </Stack>
         </Stack>
       </header>
-      <CollegeTableComponent {...collegeController} />
+      <CollegeTableComponent {...collegeViewModel} />
       <AddCollegeModalComponent />
       <DeleteCollegeModalComponent />
       <InfoCollegeModalComponent />

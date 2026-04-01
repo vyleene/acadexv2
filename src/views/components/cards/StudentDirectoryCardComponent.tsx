@@ -6,7 +6,7 @@ import AddStudentModalComponent from '../modals/AddStudentModalComponent'
 import DeleteStudentModalComponent from '../modals/DeleteStudentModalComponent'
 import InfoStudentModalComponent from '../modals/InfoStudentModalComponent'
 import StudentTableComponent from '../tables/StudentTableComponent'
-import { useStudentController } from '../../../controllers/useStudentController'
+import { useStudentViewModel } from '../../../viewmodels/useStudentViewModel'
 import {
   formatGender,
   formatStudentId,
@@ -93,7 +93,7 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
     []
   )
 
-  const studentController = useStudentController({ columns })
+  const studentViewModel = useStudentViewModel({ columns })
 
   return (
     <section className={sectionClassName} data-panel="students">
@@ -107,7 +107,7 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
           </Stack>
         </Stack>
       </header>
-      <StudentTableComponent {...studentController} />
+      <StudentTableComponent {...studentViewModel} />
       <AddStudentModalComponent />
       <DeleteStudentModalComponent />
       <InfoStudentModalComponent />

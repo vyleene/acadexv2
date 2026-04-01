@@ -1,9 +1,9 @@
 import './App.css'
-import { AppController } from './controllers/useAppController'
+import { useAppViewModel } from './viewmodels/useAppViewModel'
 import AppView from './views/AppView'
 
 function App() {
-  const appViewModel = AppController()
+  const appViewModel = useAppViewModel()
 
   return <AppView {...appViewModel} />
 }

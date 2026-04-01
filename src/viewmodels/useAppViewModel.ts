@@ -82,7 +82,7 @@ const updateLoadingStatus = (message: string) => {
   statusElement.textContent = message
 }
 
-export function AppController(): AppViewProps {
+export function useAppViewModel(): AppViewProps {
   const [activePanel, setActivePanel] = useState<PanelKey>(DEFAULT_PANEL)
   const [theme, setTheme] = useState<ThemeMode>(() => resolveInitialTheme())
   const [toasts, setToasts] = useState<ToastItem[]>([])
@@ -265,7 +265,7 @@ export function AppController(): AppViewProps {
     return () => {
       window.removeEventListener(LOADING_STATUS_EVENT, handleStatusEvent)
     }
-  }, [])
+  }, [hideLoadingScreen])
 
   return {
     activePanel,

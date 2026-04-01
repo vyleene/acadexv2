@@ -32,7 +32,7 @@ import { dispatchToast } from '../models/AppModel'
 import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
-type UseProgramControllerProps = {
+type UseProgramViewModelProps = {
   columns: ColumnDef<ProgramRow>[]
 }
 
@@ -86,7 +86,6 @@ function closeModal(modalElement: HTMLElement) {
   document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove())
 }
 
-
 function setCollegeOptions(
   selectElement: HTMLSelectElement,
   collegeCodes: string[],
@@ -121,7 +120,7 @@ function setCollegeOptions(
   selectElement.value = normalizedSelectedCode
 }
 
-export function useProgramController({ columns }: UseProgramControllerProps) {
+export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([{ id: 'code', desc: false }])
   const [pagination, setPagination] = useState<PaginationState>({

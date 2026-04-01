@@ -6,7 +6,7 @@ import AddProgramModalComponent from '../modals/AddProgramModalComponent.tsx'
 import DeleteProgramModalComponent from '../modals/DeleteProgramModalComponent.tsx'
 import InfoProgramModalComponent from '../modals/InfoProgramModalComponent.tsx'
 import ProgramTableComponent from '../tables/ProgramTableComponent.tsx'
-import { useProgramController } from '../../../controllers/useProgramController'
+import { useProgramViewModel } from '../../../viewmodels/useProgramViewModel'
 import { type ProgramRow } from '../../../models/ProgramModel'
 
 
@@ -69,7 +69,7 @@ function ProgramDirectoryCardComponent({ isActive }: ProgramDirectoryCardProps) 
     []
   )
 
-  const programController = useProgramController({ columns })
+  const programViewModel = useProgramViewModel({ columns })
 
   return (
     <section className={sectionClassName} data-panel="programs">
@@ -81,7 +81,7 @@ function ProgramDirectoryCardComponent({ isActive }: ProgramDirectoryCardProps) 
           </Stack>
         </Stack>
       </header>
-      <ProgramTableComponent {...programController} />
+      <ProgramTableComponent {...programViewModel} />
       <AddProgramModalComponent />
       <DeleteProgramModalComponent />
       <InfoProgramModalComponent />
