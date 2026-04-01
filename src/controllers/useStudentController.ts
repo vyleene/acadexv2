@@ -28,7 +28,7 @@ import {
   syncStudentProgramLink,
   updateStudent,
 } from '../models/StudentModel'
-import { dispatchToast } from '../models/AppModel'
+import { dispatchLoadingStatus, dispatchToast } from '../models/AppModel'
 import { COLLEGES_REFRESH_EVENT } from '../models/CollegeModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 
@@ -163,10 +163,12 @@ export function useStudentController({ columns }: UseStudentControllerProps) {
     try {
       const rows = await fetchStudentRows()
       setStudents(rows)
+      dispatchLoadingStatus({ key: 'students' })
     } catch (error) {
       const message = getErrorMessage(error)
       setLoadError(message)
       setStudents([])
+      dispatchLoadingStatus({ key: 'students', failed: true })
       dispatchToast({
         type: 'error',
         title: 'Students',

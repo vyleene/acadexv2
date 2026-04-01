@@ -6,35 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       ;(() => {
-        const THEME_STORAGE_KEY = 'lexian-theme'
-        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-        const resolvedTheme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark'
+        const storedTheme = localStorage.getItem('acadex-theme')
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light'
+        const resolvedTheme = storedTheme === 'light' || storedTheme === 'dark'
+          ? storedTheme
+          : systemTheme
 
         document.documentElement.setAttribute('data-bs-theme', resolvedTheme)
         document.documentElement.style.colorScheme = resolvedTheme
       })()
     </script>
-    <style>
-      html,
-      body {
-        background-color: #212529;
-        background-image:
-          radial-gradient(circle at 12% 8%, rgba(255, 209, 102, 0.08) 0%, transparent 65%),
-          radial-gradient(circle at 88% 12%, rgba(255, 209, 102, 0.06) 0%, transparent 65%);
-      }
-
-      html[data-bs-theme='light'],
-      html[data-bs-theme='light'] body {
-        background-color: #ffffff;
-        background-image:
-          radial-gradient(circle at 12% 8%, rgba(47, 107, 255, 0.07) 0%, transparent 65%),
-          radial-gradient(circle at 88% 12%, rgba(47, 107, 255, 0.05) 0%, transparent 65%);
-      }
-    </style>
     <title>Acadex v2 - Simple Student Information System</title>
   </head>
 
   <body>
+    <div id="splash-screen" aria-hidden="true">
+      <div class="loading-screen__content">
+        <div class="loading-screen__icon" aria-hidden="true"></div>
+        <div class="loading-screen__title">Acadex</div>
+        <div class="loading-screen__bar" aria-hidden="true">
+          <span class="loading-screen__bar-fill"></span>
+        </div>
+        <div class="loading-screen__status" id="loading-status" role="status" aria-live="polite"></div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

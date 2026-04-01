@@ -5,6 +5,7 @@ export type ToastType = 'success' | 'warning' | 'error'
 export const DEFAULT_PANEL: PanelKey = 'students'
 export const DEFAULT_THEME: ThemeMode = 'dark'
 export const TOAST_EVENT = 'app:toast'
+export const LOADING_STATUS_EVENT = 'app:loading-status'
 
 export type ToastItem = {
   id: string
@@ -16,6 +17,13 @@ export type ToastItem = {
 
 export type ToastPayload = Omit<ToastItem, 'id'> & { id?: string }
 
+export type LoadingDirectoryKey = 'students' | 'programs' | 'colleges'
+
+export type LoadingStatusPayload = {
+  key: LoadingDirectoryKey
+  failed?: boolean
+}
+
 export function dispatchToast(toast: ToastPayload) {
   if (typeof window === 'undefined') {
     return
@@ -24,11 +32,17 @@ export function dispatchToast(toast: ToastPayload) {
   window.dispatchEvent(new CustomEvent<ToastPayload>(TOAST_EVENT, { detail: toast }))
 }
 
+export function dispatchLoadingStatus(payload: LoadingStatusPayload) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent<LoadingStatusPayload>(LOADING_STATUS_EVENT, { detail: payload }))
+}
+
 export interface AppViewModel {
   activePanel: PanelKey
   theme: ThemeMode
-  showSplash: boolean
-  hideSplash: boolean
   toasts: ToastItem[]
 }
 

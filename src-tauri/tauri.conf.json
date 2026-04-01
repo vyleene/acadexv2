@@ -15,7 +15,8 @@
         "title": "Acadex v2 - Simple Student Information System",
         "width": 1200,
         "height": 905,
-        "decorations": false
+        "decorations": false,
+        "visible": false
       }
     ],
     "security": {

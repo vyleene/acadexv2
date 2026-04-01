@@ -19,7 +19,7 @@ import {
   normalizeCollegeCode,
   updateCollege,
 } from '../models/CollegeModel'
-import { dispatchToast } from '../models/AppModel'
+import { dispatchLoadingStatus, dispatchToast } from '../models/AppModel'
 import { PROGRAMS_REFRESH_EVENT } from '../models/ProgramModel'
 import { STUDENTS_REFRESH_EVENT } from '../models/StudentModel'
 
@@ -107,10 +107,12 @@ export function useCollegeController({ columns }: UseCollegeControllerProps) {
     try {
       const rows = await fetchCollegeRows()
       setColleges(rows)
+      dispatchLoadingStatus({ key: 'colleges' })
     } catch (error) {
       const message = getErrorMessage(error)
       setLoadError(message)
       setColleges([])
+      dispatchLoadingStatus({ key: 'colleges', failed: true })
       dispatchToast({
         type: 'error',
         title: 'Colleges',

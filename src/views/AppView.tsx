@@ -10,8 +10,6 @@ import ToastComponent from './components/ToastComponent.tsx'
 function AppView({
   activePanel,
   theme,
-  showSplash,
-  hideSplash,
   toasts,
   onToggleTheme,
   onMinimizeWindow,
@@ -21,8 +19,6 @@ function AppView({
 }: AppViewProps) {
   return (
     <>
-      {showSplash && <div id="splash-screen" className={hideSplash ? 'hide' : ''}></div>}
-
       <TitleBar
         theme={theme}
         onToggleTheme={onToggleTheme}
