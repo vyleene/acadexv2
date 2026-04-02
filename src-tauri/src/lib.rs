@@ -1,10 +1,13 @@
 mod controllers;
 mod models;
+mod repositories;
+mod services;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let database_model = tauri::async_runtime::block_on(async {
-        models::datatabase_model::DatabaseModel::from_env()
+    let database_model = models::datatabase_model::DatabaseModel::new();
+    tauri::async_runtime::block_on(async {
+        database_model.configure_placeholder().await
     })
     .expect("failed to configure MySQL database model");
 
@@ -14,6 +17,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             controllers::database_controller::initialize_mysql_schema,
+            controllers::database_controller::configure_mysql_database,
+            controllers::database_controller::get_mysql_database_status,
+            controllers::database_controller::test_mysql_database_connection,
             controllers::colleges_controller::create_college,
             controllers::colleges_controller::read_college,
             controllers::colleges_controller::update_college,
