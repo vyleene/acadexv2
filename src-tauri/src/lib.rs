@@ -21,6 +21,7 @@ pub fn run() {
             controllers::database_controller::configure_mysql_database,
             controllers::database_controller::get_mysql_database_status,
             controllers::database_controller::test_mysql_database_connection,
+            controllers::database_controller::disconnect_mysql_database,
             controllers::colleges_controller::create_college,
             controllers::colleges_controller::read_college,
             controllers::colleges_controller::update_college,

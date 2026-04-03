@@ -6,6 +6,7 @@ import CollegeDirectoryCard from './components/cards/CollegeDirectoryCardCompone
 import DirectoryNav from './components/DirectoryNavComponent'
 import LoginPageView from './LoginPageView'
 import LoadingScreenView from './LoadingScreenView'
+import AppSettingsModal from './components/modals/AppSettingsModalComponent'
 import TitleBar from './components/TitleBarComponent'
 import ToastComponent from './components/ToastComponent.tsx'
 
@@ -18,6 +19,7 @@ function AppView({
   loadingStatus,
   loginForm,
   isLoginBusy,
+  isDisconnecting,
   onToggleTheme,
   onMinimizeWindow,
   onCloseWindow,
@@ -25,20 +27,28 @@ function AppView({
   onDismissToast,
   onLoginFieldChange,
   onLoginSubmit,
+  onDisconnectDatabase,
 }: AppViewProps) {
   const showLogin = appStage === 'login'
   const showAppContent = appStage === 'loading' || appStage === 'ready'
+  const isConnected = appStage === 'loading' || appStage === 'ready'
 
   return (
     <>
       <LoadingScreenView isVisible={isLoadingVisible} status={loadingStatus} />
       <TitleBar
-        theme={theme}
-        onToggleTheme={onToggleTheme}
         onMinimizeWindow={onMinimizeWindow}
         onCloseWindow={onCloseWindow}
       />
       <ToastComponent toasts={toasts} onDismissToast={onDismissToast} />
+      <AppSettingsModal
+        theme={theme}
+        credentials={loginForm}
+        isConnected={isConnected}
+        isDisconnecting={isDisconnecting}
+        onToggleTheme={onToggleTheme}
+        onDisconnect={onDisconnectDatabase}
+      />
 
       {showLogin ? (
         <LoginPageView

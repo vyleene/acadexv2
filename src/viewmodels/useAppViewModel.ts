@@ -137,6 +137,7 @@ export function useAppViewModel(): AppViewProps {
   const [loadingStatus, setLoadingStatus] = useState(CHECKING_STATUS)
   const [loginForm, setLoginForm] = useState<LoginFormValues>(() => ({ ...DEFAULT_LOGIN_FORM }))
   const [isLoginBusy, setLoginBusy] = useState(false)
+  const [isDisconnecting, setDisconnecting] = useState(false)
   const toastIdRef = useRef(0)
   const loadingSequenceRef = useRef({
     index: 0,
@@ -204,10 +205,24 @@ export function useAppViewModel(): AppViewProps {
     setAppStage('ready')
   }, [])
 
+  const goToLoginStage = useCallback(() => {
+    loadingTimersRef.current.forEach((timerId) => window.clearTimeout(timerId))
+    loadingTimersRef.current = []
+    loadingSequenceRef.current = {
+      index: 0,
+      running: false,
+      finished: false,
+      failed: {},
+    }
+    hasHiddenLoadingRef.current = false
+    setAppStage('login')
+    setLoadingVisible(false)
+    setLoadingStatus(CHECKING_STATUS)
+  }, [])
+
   const showLogin = useCallback(
     (message?: string) => {
-      setAppStage('login')
-      setLoadingVisible(false)
+      goToLoginStage()
 
       if (message) {
         pushToast({
@@ -217,7 +232,7 @@ export function useAppViewModel(): AppViewProps {
         })
       }
     },
-    [pushToast],
+    [goToLoginStage, pushToast],
   )
 
   const prepareDatabase = useCallback(
@@ -368,6 +383,42 @@ export function useAppViewModel(): AppViewProps {
     }
   }, [beginLoadingSequence, isLoginBusy, loginForm, prepareDatabase, pushToast])
 
+  const onDisconnectDatabase = useCallback(async () => {
+    if (isDisconnecting) {
+      return
+    }
+
+    if (!isTauri()) {
+      pushToast({
+        type: 'error',
+        title: 'MySQL disconnect',
+        message: 'MySQL disconnect is only available in the Tauri runtime.',
+      })
+      return
+    }
+
+    setDisconnecting(true)
+
+    try {
+      await invoke('disconnect_mysql_database')
+      goToLoginStage()
+      pushToast({
+        type: 'success',
+        title: 'MySQL disconnected',
+        message: 'The database connection has been closed.',
+      })
+    } catch (error) {
+      const message = getErrorMessage(error)
+      pushToast({
+        type: 'error',
+        title: 'MySQL disconnect failed',
+        message: message ? `MySQL: ${message}` : 'MySQL: Unable to disconnect.',
+      })
+    } finally {
+      setDisconnecting(false)
+    }
+  }, [goToLoginStage, isDisconnecting, pushToast])
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return
@@ -477,6 +528,7 @@ export function useAppViewModel(): AppViewProps {
     loadingStatus,
     loginForm,
     isLoginBusy,
+    isDisconnecting,
     onToggleTheme,
     onSelectPanel,
     onMinimizeWindow,
@@ -485,5 +537,6 @@ export function useAppViewModel(): AppViewProps {
     onDismissToast,
     onLoginFieldChange,
     onLoginSubmit,
+    onDisconnectDatabase,
   }
 }

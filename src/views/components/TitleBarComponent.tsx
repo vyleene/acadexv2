@@ -1,20 +1,12 @@
-import type { ThemeMode } from '../../models/AppModel'
-import { MinusIcon, MoonIcon, SunIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { Cog6ToothIcon, MinusIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { Button, Stack } from 'react-bootstrap'
 
 interface TitleBarProps {
-  theme: ThemeMode
-  onToggleTheme: () => void
   onMinimizeWindow: () => void
   onCloseWindow: () => void
 }
 
-function TitleBarComponent({
-  theme,
-  onToggleTheme,
-  onMinimizeWindow,
-  onCloseWindow,
-}: TitleBarProps) {
+function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
   return (
     <header className="app-titlebar" id="app-titlebar">
       <div className="app-titlebar__drag-area" data-tauri-drag-region>
@@ -26,15 +18,14 @@ function TitleBarComponent({
       <Stack direction="horizontal" gap={2} className="app-titlebar__actions">
         <Button
           variant="link"
-          className="titlebar-btn titlebar-btn--theme"
-          id="btn-theme"
+          className="titlebar-btn"
+          id="btn-settings"
           type="button"
-          aria-label="Toggle theme"
-          aria-pressed={theme === 'light'}
-          onClick={onToggleTheme}
+          aria-label="Open settings"
+          data-bs-toggle="modal"
+          data-bs-target="#appSettingsModal"
         >
-          <MoonIcon className="heroicon-url theme-icon theme-icon--moon" aria-hidden="true" />
-          <SunIcon className="heroicon-url theme-icon theme-icon--sun" aria-hidden="true" />
+          <Cog6ToothIcon className="heroicon-url titlebar-icon" aria-hidden="true" />
         </Button>
         <Button
           variant="link"

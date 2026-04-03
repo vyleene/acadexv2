@@ -146,6 +146,23 @@ impl DatabaseModel {
             .ok_or_else(|| "MySQL database is not configured.".to_string())
     }
 
+    pub async fn disconnect(&self) -> Result<(), String> {
+        let pool = {
+            let mut state = self
+                .state
+                .write()
+                .map_err(|_| "Database state lock is unavailable.".to_string())?;
+            state.config = None;
+            state.pool.take()
+        };
+
+        if let Some(pool) = pool {
+            pool.close().await;
+        }
+
+        Ok(())
+    }
+
     pub async fn initialize_schema(&self) -> Result<(), String> {
         let pool = self.pool()?;
         for statement in SCHEMA_MIGRATION_SQL {

@@ -59,6 +59,7 @@ export interface AppViewModel {
   loadingStatus: string
   loginForm: LoginFormValues
   isLoginBusy: boolean
+  isDisconnecting: boolean
 }
 
 export interface AppViewActions {
@@ -70,6 +71,7 @@ export interface AppViewActions {
   onDismissToast: (id: string) => void
   onLoginFieldChange: (field: keyof LoginFormValues, value: string) => void
   onLoginSubmit: () => void
+  onDisconnectDatabase: () => void
 }
 
 export type AppViewProps = AppViewModel & AppViewActions

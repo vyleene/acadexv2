@@ -26,3 +26,8 @@ pub async fn get_mysql_database_status(
 pub async fn test_mysql_database_connection(payload: DatabaseConfigPayload) -> Result<(), String> {
     DatabaseModel::test_connection(payload).await
 }
+
+#[tauri::command]
+pub async fn disconnect_mysql_database(database: State<'_, DatabaseModel>) -> Result<(), String> {
+    database.disconnect().await
+}
