@@ -1,9 +1,4 @@
-import {
-  normalizeProgramCode,
-  type CreateStudentPayload,
-  type StudentRow,
-  type UpdateStudentPayload,
-} from '../models/StudentModel'
+import { type CreateStudentPayload, type StudentRow, type UpdateStudentPayload } from '../models/StudentModel'
 import { assertTauriRuntime, invokeTauri, isTauriRuntime } from './tauriClient'
 
 type BackendStudent = {
@@ -12,11 +7,6 @@ type BackendStudent = {
   lastname: string
   year: string
   gender: string
-  program_code: string | null
-}
-
-type BackendCollegeProgramLink = {
-  college_code: string
   program_code: string
 }
 
@@ -27,10 +17,7 @@ type BackendCollege = {
 
 type BackendProgram = {
   code: string
-}
-
-type BackendStudentProgram = {
-  program_code: string | null
+  college_code: string
 }
 
 const TAURI_REQUIRED_MESSAGE = 'Tauri runtime is required to manage student data.'
@@ -45,7 +32,7 @@ function mapStudentRow(student: BackendStudent): StudentRow {
     id: student.id,
     firstName: student.firstname,
     lastName: student.lastname,
-    programCode: student.program_code ?? 'N/A',
+    programCode: student.program_code || 'N/A',
     year: student.year,
     gender: student.gender,
     collegeCode: 'N/A',
@@ -56,9 +43,9 @@ function mapStudentRow(student: BackendStudent): StudentRow {
 export async function fetchStudentRows(): Promise<StudentRow[]> {
   assertTauriRuntime(TAURI_REQUIRED_MESSAGE)
 
-  const [studentsResponse, linkResponse, collegesResponse] = await Promise.all([
+  const [studentsResponse, programsResponse, collegesResponse] = await Promise.all([
     invokeTauri<BackendStudent[]>('list_students'),
-    invokeTauri<BackendCollegeProgramLink[]>('list_college_program_links'),
+    invokeTauri<BackendProgram[]>('list_programs'),
     invokeTauri<BackendCollege[]>('list_colleges'),
   ])
 
@@ -67,13 +54,9 @@ export async function fetchStudentRows(): Promise<StudentRow[]> {
     collegesByCode.set(college.code, college.name)
   }
 
-  const collegesByProgram = new Map<string, Set<string>>()
-  for (const link of linkResponse) {
-    if (!collegesByProgram.has(link.program_code)) {
-      collegesByProgram.set(link.program_code, new Set<string>())
-    }
-
-    collegesByProgram.get(link.program_code)?.add(link.college_code)
+  const collegesByProgram = new Map<string, string>()
+  for (const program of programsResponse) {
+    collegesByProgram.set(program.code, program.college_code)
   }
 
   return studentsResponse.map((student) => {
@@ -82,20 +65,16 @@ export async function fetchStudentRows(): Promise<StudentRow[]> {
       return row
     }
 
-    const codes = Array.from(collegesByProgram.get(row.programCode) ?? []).sort((a, b) =>
-      a.localeCompare(b)
-    )
+    const collegeCode = collegesByProgram.get(row.programCode)
 
-    if (codes.length === 0) {
+    if (!collegeCode) {
       return row
     }
 
-    const names = codes.map((code) => collegesByCode.get(code) ?? 'N/A')
-
     return {
       ...row,
-      collegeCode: codes.join(', '),
-      collegeName: names.join(', '),
+      collegeCode,
+      collegeName: collegesByCode.get(collegeCode) ?? 'N/A',
     }
   })
 }
@@ -133,13 +112,6 @@ export async function fetchProgramCodes(): Promise<string[]> {
   return pendingProgramCodesRequest
 }
 
-export async function fetchStudentProgramCode(studentId: number): Promise<string | null> {
-  assertTauriRuntime(TAURI_REQUIRED_MESSAGE)
-
-  const student = await invokeTauri<BackendStudentProgram | null>('read_student', { id: studentId })
-  return student?.program_code ?? null
-}
-
 export async function createStudent(payload: CreateStudentPayload) {
   assertTauriRuntime(TAURI_REQUIRED_MESSAGE)
   return invokeTauri('create_student', { payload })
@@ -153,60 +125,4 @@ export async function updateStudent(id: number, payload: UpdateStudentPayload) {
 export async function deleteStudent(id: number) {
   assertTauriRuntime(TAURI_REQUIRED_MESSAGE)
   return invokeTauri('delete_student', { id })
-}
-
-export async function syncStudentProgramLink(
-  studentId: number,
-  previousProgramCode: string,
-  nextProgramCode: string,
-) {
-  assertTauriRuntime(TAURI_REQUIRED_MESSAGE)
-
-  const previousCode = normalizeProgramCode(previousProgramCode)
-  const nextCode = normalizeProgramCode(nextProgramCode)
-
-  if (previousCode === nextCode) {
-    return
-  }
-
-  if (previousCode && nextCode) {
-    try {
-      await invokeTauri('update_student_program_link', {
-        student_id: studentId,
-        program_code: previousCode,
-        payload: {
-          new_student_id: studentId,
-          new_program_code: nextCode,
-        },
-      })
-      return
-    } catch (error) {
-      console.error('Failed to update student program link:', error)
-    }
-
-    await invokeTauri('create_student_program_link', {
-      payload: {
-        student_id: studentId,
-        program_code: nextCode,
-      },
-    })
-    return
-  }
-
-  if (!previousCode && nextCode) {
-    await invokeTauri('create_student_program_link', {
-      payload: {
-        student_id: studentId,
-        program_code: nextCode,
-      },
-    })
-    return
-  }
-
-  if (previousCode && !nextCode) {
-    await invokeTauri('delete_student_program_link', {
-      student_id: studentId,
-      program_code: previousCode,
-    })
-  }
 }

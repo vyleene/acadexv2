@@ -10,40 +10,28 @@ const DEFAULT_DATABASE_PASSWORD: &str = "password";
 const DEFAULT_MAX_CONNECTIONS: u32 = 10;
 const SCHEMA_MIGRATION_SQL: &[&str] = &[
     r#"CREATE TABLE IF NOT EXISTS colleges (
-        code varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+        code char(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         PRIMARY KEY (code)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"#,
     r#"CREATE TABLE IF NOT EXISTS programs (
-        code varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+        code char(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+        college_code char(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
         PRIMARY KEY (code)
+        , KEY college_code (college_code)
+        , CONSTRAINT programs_ibfk_1 FOREIGN KEY (college_code) REFERENCES colleges (code) ON DELETE SET NULL ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"#,
     r#"CREATE TABLE IF NOT EXISTS students (
         id int NOT NULL,
-        firstname varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-        lastname varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+        program_code char(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+        firstname varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+        lastname varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         `year` enum('1','2','3','4') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         gender enum('M','F') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         PRIMARY KEY (id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"#,
-    r#"CREATE TABLE IF NOT EXISTS colleges_programs (
-        college_code varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-        program_code varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-        PRIMARY KEY (college_code, program_code),
-        KEY program_code (program_code),
-        CONSTRAINT colleges_programs_ibfk_1 FOREIGN KEY (college_code) REFERENCES colleges (code) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT colleges_programs_ibfk_2 FOREIGN KEY (program_code) REFERENCES programs (code) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"#,
-    r#"CREATE TABLE IF NOT EXISTS students_programs (
-        student_id int NOT NULL,
-        program_code varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-        date_enrolled datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (student_id, program_code, date_enrolled),
-        KEY program_code (program_code),
-        KEY student_date (student_id, date_enrolled),
-        CONSTRAINT students_programs_ibfk_1 FOREIGN KEY (program_code) REFERENCES programs (code) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT students_programs_ibfk_2 FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE ON UPDATE CASCADE
+        , KEY program_code (program_code)
+        , CONSTRAINT students_ibfk_1 FOREIGN KEY (program_code) REFERENCES programs (code) ON DELETE SET NULL ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"#,
 ];
 

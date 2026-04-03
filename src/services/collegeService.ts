@@ -5,14 +5,12 @@ type BackendCollege = {
   code: string
   name: string
 }
-
-type BackendCollegeProgramLink = {
+type BackendProgram = {
+  code: string
   college_code: string
-  program_code: string
 }
 
-type BackendStudentProgramLink = {
-  student_id: number
+type BackendStudent = {
   program_code: string
 }
 
@@ -21,26 +19,25 @@ const TAURI_REQUIRED_MESSAGE = 'Tauri runtime is required to manage college data
 export async function fetchCollegeRows(): Promise<CollegeRow[]> {
   assertTauriRuntime(TAURI_REQUIRED_MESSAGE)
 
-  const [collegeResponse, linkResponse, studentProgramLinks] = await Promise.all([
+  const [collegeResponse, programResponse, studentResponse] = await Promise.all([
     invokeTauri<BackendCollege[]>('list_colleges'),
-    invokeTauri<BackendCollegeProgramLink[]>('list_college_program_links'),
-    invokeTauri<BackendStudentProgramLink[]>('list_student_program_links'),
+    invokeTauri<BackendProgram[]>('list_programs'),
+    invokeTauri<BackendStudent[]>('list_students'),
   ])
 
   const programsByCollege = new Map<string, Set<string>>()
-  for (const link of linkResponse) {
-    if (!programsByCollege.has(link.college_code)) {
-      programsByCollege.set(link.college_code, new Set<string>())
+  for (const program of programResponse) {
+    if (!programsByCollege.has(program.college_code)) {
+      programsByCollege.set(program.college_code, new Set<string>())
     }
-
-    programsByCollege.get(link.college_code)?.add(link.program_code)
+    programsByCollege.get(program.college_code)?.add(program.code)
   }
 
   const studentCountsByProgram = new Map<string, number>()
-  for (const link of studentProgramLinks) {
+  for (const student of studentResponse) {
     studentCountsByProgram.set(
-      link.program_code,
-      (studentCountsByProgram.get(link.program_code) ?? 0) + 1,
+      student.program_code,
+      (studentCountsByProgram.get(student.program_code) ?? 0) + 1,
     )
   }
 

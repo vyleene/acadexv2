@@ -12,10 +12,12 @@ export type ProgramRow = {
 export type CreateProgramPayload = {
   code: string
   name: string
+  college_code: string
 }
 
 export type UpdateProgramPayload = {
   name: string
+  college_code: string
 }
 
 export function normalizeCollegeCode(value?: string): string {
@@ -34,15 +36,3 @@ export function normalizeProgramCode(value?: string): string {
   return value
 }
 
-export function getPrimaryCollegeCode(value?: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const codes = value
-    .split(',')
-    .map((code) => code.trim())
-    .filter(Boolean)
-
-  return codes[0] ?? ''
-}

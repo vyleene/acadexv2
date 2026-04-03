@@ -14,6 +14,7 @@ export type StudentRow = {
 
 export type CreateStudentPayload = {
   id: number
+  program_code: string
   firstname: string
   lastname: string
   year: string
@@ -21,6 +22,7 @@ export type CreateStudentPayload = {
 }
 
 export type UpdateStudentPayload = {
+  program_code: string
   firstname: string
   lastname: string
   year: string

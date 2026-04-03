@@ -1,7 +1,6 @@
 use crate::models::datatabase_model::DatabaseModel;
 use crate::models::students_model::{
-    CreateStudentPayload, CreateStudentProgramLinkPayload, Student, StudentProgramLink,
-    UpdateStudentPayload, UpdateStudentProgramLinkPayload,
+    CreateStudentPayload, Student, UpdateStudentPayload,
 };
 
 pub struct StudentsRepository;
@@ -12,16 +11,18 @@ impl StudentsRepository {
         payload: CreateStudentPayload,
     ) -> Result<Student, String> {
         let id = normalize_student_id(payload.id)?;
-        let firstname = normalize_name(&payload.firstname, "student firstname", 32)?;
-        let lastname = normalize_name(&payload.lastname, "student lastname", 32)?;
+        let program_code = normalize_code(&payload.program_code, "program code")?;
+        let firstname = normalize_name(&payload.firstname, "student firstname", 128)?;
+        let lastname = normalize_name(&payload.lastname, "student lastname", 128)?;
         let year = normalize_year(&payload.year)?;
         let gender = normalize_gender(&payload.gender)?;
         let pool = database.pool()?;
 
         sqlx::query(
-            "INSERT INTO students (id, firstname, lastname, `year`, gender) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO students (id, program_code, firstname, lastname, `year`, gender) VALUES (?, ?, ?, ?, ?, ?)",
         )
         .bind(id)
+        .bind(&program_code)
         .bind(&firstname)
         .bind(&lastname)
         .bind(&year)
@@ -36,7 +37,7 @@ impl StudentsRepository {
             lastname,
             year,
             gender,
-            program_code: None,
+            program_code: Some(program_code),
         })
     }
 
@@ -52,13 +53,7 @@ impl StudentsRepository {
                 s.lastname,
                 s.`year`,
                 s.gender,
-                (
-                    SELECT sp.program_code
-                    FROM students_programs sp
-                    WHERE sp.student_id = s.id
-                    ORDER BY sp.date_enrolled DESC, sp.program_code DESC
-                    LIMIT 1
-                ) AS program_code
+                s.program_code
             FROM students s
             WHERE s.id = ?
             "#,
@@ -75,15 +70,17 @@ impl StudentsRepository {
         payload: UpdateStudentPayload,
     ) -> Result<Student, String> {
         let id = normalize_student_id(id)?;
-        let firstname = normalize_name(&payload.firstname, "student firstname", 20)?;
-        let lastname = normalize_name(&payload.lastname, "student lastname", 20)?;
+        let program_code = normalize_code(&payload.program_code, "program code")?;
+        let firstname = normalize_name(&payload.firstname, "student firstname", 128)?;
+        let lastname = normalize_name(&payload.lastname, "student lastname", 128)?;
         let year = normalize_year(&payload.year)?;
         let gender = normalize_gender(&payload.gender)?;
         let pool = database.pool()?;
 
         let update_result = sqlx::query(
-            "UPDATE students SET firstname = ?, lastname = ?, `year` = ?, gender = ? WHERE id = ?",
+            "UPDATE students SET program_code = ?, firstname = ?, lastname = ?, `year` = ?, gender = ? WHERE id = ?",
         )
+        .bind(&program_code)
         .bind(&firstname)
         .bind(&lastname)
         .bind(&year)
@@ -103,7 +100,7 @@ impl StudentsRepository {
             lastname,
             year,
             gender,
-            program_code: None,
+            program_code: Some(program_code),
         })
     }
 
@@ -130,13 +127,7 @@ impl StudentsRepository {
                 s.lastname,
                 s.`year`,
                 s.gender,
-                (
-                    SELECT sp.program_code
-                    FROM students_programs sp
-                    WHERE sp.student_id = s.id
-                    ORDER BY sp.date_enrolled DESC, sp.program_code DESC
-                    LIMIT 1
-                ) AS program_code
+                s.program_code
             FROM students s
             ORDER BY s.lastname, s.firstname, s.id
             "#,
@@ -144,111 +135,6 @@ impl StudentsRepository {
         .fetch_all(&pool)
         .await
         .map_err(|error| database_error("Failed to list students", error))
-    }
-
-    pub async fn create_program_link(
-        database: &DatabaseModel,
-        payload: CreateStudentProgramLinkPayload,
-    ) -> Result<StudentProgramLink, String> {
-        let student_id = normalize_student_id(payload.student_id)?;
-        let program_code = normalize_code(&payload.program_code, "program code")?;
-        let pool = database.pool()?;
-
-        sqlx::query("INSERT INTO students_programs (student_id, program_code) VALUES (?, ?)")
-            .bind(student_id)
-            .bind(&program_code)
-            .execute(&pool)
-            .await
-            .map_err(|error| database_error("Failed to create student-program link", error))?;
-
-        Ok(StudentProgramLink {
-            student_id,
-            program_code,
-        })
-    }
-
-    pub async fn read_program_link(
-        database: &DatabaseModel,
-        student_id: i32,
-        program_code: String,
-    ) -> Result<Option<StudentProgramLink>, String> {
-        let student_id = normalize_student_id(student_id)?;
-        let program_code = normalize_code(&program_code, "program code")?;
-        let pool = database.pool()?;
-
-        sqlx::query_as::<_, StudentProgramLink>(
-            "SELECT student_id, program_code FROM students_programs WHERE student_id = ? AND program_code = ?",
-        )
-        .bind(student_id)
-        .bind(&program_code)
-        .fetch_optional(&pool)
-        .await
-        .map_err(|error| database_error("Failed to read student-program link", error))
-    }
-
-    pub async fn update_program_link(
-        database: &DatabaseModel,
-        student_id: i32,
-        program_code: String,
-        payload: UpdateStudentProgramLinkPayload,
-    ) -> Result<StudentProgramLink, String> {
-        let student_id = normalize_student_id(student_id)?;
-        let program_code = normalize_code(&program_code, "program code")?;
-        let new_student_id = normalize_student_id(payload.new_student_id)?;
-        let new_program_code = normalize_code(&payload.new_program_code, "new program code")?;
-        let pool = database.pool()?;
-
-        let update_result = sqlx::query(
-            "UPDATE students_programs SET student_id = ?, program_code = ? WHERE student_id = ? AND program_code = ?",
-        )
-        .bind(new_student_id)
-        .bind(&new_program_code)
-        .bind(student_id)
-        .bind(&program_code)
-        .execute(&pool)
-        .await
-        .map_err(|error| database_error("Failed to update student-program link", error))?;
-
-        if update_result.rows_affected() == 0 {
-            return Err("Student-program link was not found.".to_string());
-        }
-
-        Ok(StudentProgramLink {
-            student_id: new_student_id,
-            program_code: new_program_code,
-        })
-    }
-
-    pub async fn delete_program_link(
-        database: &DatabaseModel,
-        student_id: i32,
-        program_code: String,
-    ) -> Result<bool, String> {
-        let student_id = normalize_student_id(student_id)?;
-        let program_code = normalize_code(&program_code, "program code")?;
-        let pool = database.pool()?;
-
-        let delete_result =
-            sqlx::query("DELETE FROM students_programs WHERE student_id = ? AND program_code = ?")
-                .bind(student_id)
-                .bind(&program_code)
-                .execute(&pool)
-                .await
-                .map_err(|error| database_error("Failed to delete student-program link", error))?;
-
-        Ok(delete_result.rows_affected() > 0)
-    }
-
-    pub async fn list_program_links(
-        database: &DatabaseModel,
-    ) -> Result<Vec<StudentProgramLink>, String> {
-        let pool = database.pool()?;
-        sqlx::query_as::<_, StudentProgramLink>(
-            "SELECT student_id, program_code FROM students_programs ORDER BY student_id, program_code",
-        )
-        .fetch_all(&pool)
-        .await
-        .map_err(|error| database_error("Failed to list student-program links", error))
     }
 }
 

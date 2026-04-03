@@ -25,9 +25,7 @@ import {
   createStudent,
   deleteStudent,
   fetchProgramCodes,
-  fetchStudentProgramCode,
   fetchStudentRows,
-  syncStudentProgramLink,
   updateStudent,
 } from '../services/studentService'
 import { useDirectoryData } from '../hooks/useDirectoryData'
@@ -259,7 +257,6 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       if (mode === 'add') {
         form.dataset.mode = 'add'
         form.dataset.studentId = ''
-        form.dataset.studentProgramCode = ''
         titleElement.textContent = 'Add Student'
         submitButton.textContent = 'Add Student'
 
@@ -332,23 +329,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         genderSelect.value = trigger?.dataset.studentGender ?? ''
       }
 
-      let selectedProgramCode = normalizeProgramCode(trigger?.dataset.studentProgramCode)
-
-      if (digits) {
-        const parsedStudentId = Number.parseInt(digits, 10)
-
-        if (Number.isFinite(parsedStudentId)) {
-          try {
-            const programCode = await fetchStudentProgramCode(parsedStudentId)
-            selectedProgramCode = normalizeProgramCode(programCode ?? selectedProgramCode)
-          } catch (error) {
-            console.error('Failed to refresh student program for edit modal:', error)
-          }
-        }
-      }
-
-      form.dataset.studentProgramCode = selectedProgramCode
-
+      const selectedProgramCode = normalizeProgramCode(trigger?.dataset.studentProgramCode)
       await populateProgramSelect(selectedProgramCode)
     }
 
@@ -395,26 +376,20 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         if (mode === 'add') {
           await createStudent({
             id: studentId,
+            program_code: programCode,
             firstname: firstName,
             lastname: lastName,
             year,
             gender,
           })
-
-          await syncStudentProgramLink(studentId, '', programCode)
         } else {
           await updateStudent(studentId, {
+            program_code: programCode,
             firstname: firstName,
             lastname: lastName,
             year,
             gender,
           })
-
-          await syncStudentProgramLink(
-            studentId,
-            form.dataset.studentProgramCode ?? '',
-            programCode,
-          )
         }
 
         const studentName = `${firstName} ${lastName}`.trim()
@@ -425,7 +400,6 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
           message: `Student: ${studentLabel} was ${actionResult}.`,
         })
 
-        form.dataset.studentProgramCode = normalizeProgramCode(programCode)
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))

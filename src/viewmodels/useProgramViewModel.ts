@@ -13,7 +13,6 @@ import {
   PROGRAM_ROWS_PER_PAGE,
   PROGRAMS_REFRESH_EVENT,
   type ProgramRow,
-  getPrimaryCollegeCode,
   normalizeCollegeCode,
   normalizeProgramCode,
 } from '../models/ProgramModel'
@@ -21,9 +20,7 @@ import {
   createProgram,
   deleteProgram,
   fetchCollegeCodes,
-  fetchProgramCollegeCodes,
   fetchProgramRows,
-  syncProgramCollegeLink,
   updateProgram,
 } from '../services/programService'
 import { useDirectoryData } from '../hooks/useDirectoryData'
@@ -228,7 +225,6 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
       if (mode === 'add') {
         form.dataset.mode = 'add'
         form.dataset.programCode = ''
-        form.dataset.programCollegeCode = ''
         titleElement.textContent = 'Add Program'
         submitButton.textContent = 'Add Program'
 
@@ -266,22 +262,8 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         nameInput.value = programName
       }
 
-      let selectedCollegeCode = getPrimaryCollegeCode(trigger?.dataset.collegeCode)
-
-      if (programCode) {
-        try {
-          const codes = await fetchProgramCollegeCodes(programCode)
-          if (codes.length > 0) {
-            selectedCollegeCode = codes[0]
-          }
-        } catch (error) {
-          console.error('Failed to refresh program college link:', error)
-        }
-      }
-
+      const selectedCollegeCode = normalizeCollegeCode(trigger?.dataset.collegeCode)
       form.dataset.programCode = programCode
-      form.dataset.programCollegeCode = selectedCollegeCode
-
       await populateCollegeSelect(selectedCollegeCode)
     }
 
@@ -320,15 +302,9 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
 
       try {
         if (mode === 'add') {
-          await createProgram({ code: programCode, name: programName })
-          await syncProgramCollegeLink(programCode, '', collegeCode)
+          await createProgram({ code: programCode, name: programName, college_code: collegeCode })
         } else {
-          await updateProgram(programCode, { name: programName })
-          await syncProgramCollegeLink(
-            programCode,
-            form.dataset.programCollegeCode ?? '',
-            collegeCode,
-          )
+          await updateProgram(programCode, { name: programName, college_code: collegeCode })
         }
 
         const programLabel = programName ? `${programName} (${programCode})` : programCode
@@ -340,7 +316,6 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
             : `Program: Program was ${actionResult}.`,
         })
 
-        form.dataset.programCollegeCode = normalizeCollegeCode(collegeCode)
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
