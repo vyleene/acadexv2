@@ -24,6 +24,16 @@ export type LoadingStatusPayload = {
   failed?: boolean
 }
 
+export type AppStage = 'checking' | 'login' | 'loading' | 'ready'
+
+export type LoginFormValues = {
+  host: string
+  port: string
+  database: string
+  username: string
+  password: string
+}
+
 export function dispatchToast(toast: ToastPayload) {
   if (typeof window === 'undefined') {
     return
@@ -44,6 +54,11 @@ export interface AppViewModel {
   activePanel: PanelKey
   theme: ThemeMode
   toasts: ToastItem[]
+  appStage: AppStage
+  isLoadingVisible: boolean
+  loadingStatus: string
+  loginForm: LoginFormValues
+  isLoginBusy: boolean
 }
 
 export interface AppViewActions {
@@ -53,6 +68,8 @@ export interface AppViewActions {
   onCloseWindow: () => void
   onShowToast: (toast: ToastPayload) => void
   onDismissToast: (id: string) => void
+  onLoginFieldChange: (field: keyof LoginFormValues, value: string) => void
+  onLoginSubmit: () => void
 }
 
 export type AppViewProps = AppViewModel & AppViewActions

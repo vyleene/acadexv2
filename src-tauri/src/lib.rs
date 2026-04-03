@@ -7,9 +7,10 @@ mod services;
 pub fn run() {
     let database_model = models::datatabase_model::DatabaseModel::new();
     tauri::async_runtime::block_on(async {
-        database_model.configure_placeholder().await
-    })
-    .expect("failed to configure MySQL database model");
+        if let Err(error) = database_model.configure_placeholder().await {
+            eprintln!("Failed to configure placeholder MySQL connection: {}", error);
+        }
+    });
 
     tauri::Builder::default()
         .manage(database_model)

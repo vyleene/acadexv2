@@ -4,9 +4,11 @@ import {
   DEFAULT_THEME,
   LOADING_STATUS_EVENT,
   TOAST_EVENT,
-  type LoadingStatusPayload,
-  type LoadingDirectoryKey,
+  type AppStage,
   type AppViewProps,
+  type LoadingDirectoryKey,
+  type LoadingStatusPayload,
+  type LoginFormValues,
   type PanelKey,
   type ThemeMode,
   type ToastItem,
@@ -14,10 +16,20 @@ import {
 } from '../models/AppModel'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { getErrorMessage } from '../utils/errors'
 
 type TauriRuntimeWindow = {
   minimize: () => Promise<void>
   close: () => Promise<void>
+}
+
+type DatabaseConfigPayload = {
+  host: string
+  port: number
+  database: string
+  username: string
+  password: string
+  max_connections?: number
 }
 
 const runWindowAction = async (action: (appWindow: TauriRuntimeWindow) => Promise<void>) => {
@@ -34,6 +46,53 @@ const LOADING_LABELS: Record<LoadingDirectoryKey, string> = {
   students: 'students',
   programs: 'programs',
   colleges: 'colleges',
+}
+const DEFAULT_LOGIN_FORM: LoginFormValues = {
+  host: 'localhost',
+  port: '3306',
+  database: 'acadex',
+  username: 'root',
+  password: 'password',
+}
+const CHECKING_STATUS = 'Checking database...'
+
+const buildDatabasePayload = (
+  values: LoginFormValues,
+): { payload?: DatabaseConfigPayload; error?: string } => {
+  const host = values.host.trim()
+  if (!host) {
+    return { error: 'Host is required.' }
+  }
+
+  const database = values.database.trim()
+  if (!database) {
+    return { error: 'Database name is required.' }
+  }
+
+  const username = values.username.trim()
+  if (!username) {
+    return { error: 'Username is required.' }
+  }
+
+  const password = values.password.trim()
+  if (!password) {
+    return { error: 'Password is required.' }
+  }
+
+  const port = Number.parseInt(values.port, 10)
+  if (!Number.isFinite(port) || port <= 0) {
+    return { error: 'Port must be a positive number.' }
+  }
+
+  return {
+    payload: {
+      host,
+      port,
+      database,
+      username,
+      password: values.password,
+    },
+  }
 }
 
 const getSystemTheme = (): ThemeMode => {
@@ -69,23 +128,15 @@ const applyTheme = (theme: ThemeMode) => {
   }
 }
 
-const updateLoadingStatus = (message: string) => {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  const statusElement = document.getElementById('loading-status')
-  if (!statusElement) {
-    return
-  }
-
-  statusElement.textContent = message
-}
-
 export function useAppViewModel(): AppViewProps {
   const [activePanel, setActivePanel] = useState<PanelKey>(DEFAULT_PANEL)
   const [theme, setTheme] = useState<ThemeMode>(() => resolveInitialTheme())
   const [toasts, setToasts] = useState<ToastItem[]>([])
+  const [appStage, setAppStage] = useState<AppStage>('checking')
+  const [isLoadingVisible, setLoadingVisible] = useState(true)
+  const [loadingStatus, setLoadingStatus] = useState(CHECKING_STATUS)
+  const [loginForm, setLoginForm] = useState<LoginFormValues>(() => ({ ...DEFAULT_LOGIN_FORM }))
+  const [isLoginBusy, setLoginBusy] = useState(false)
   const toastIdRef = useRef(0)
   const loadingSequenceRef = useRef({
     index: 0,
@@ -105,38 +156,139 @@ export function useAppViewModel(): AppViewProps {
   }, [theme])
 
   useEffect(() => {
-    updateLoadingStatus('Loading students...')
-
     return () => {
       loadingTimersRef.current.forEach((timerId) => window.clearTimeout(timerId))
       loadingTimersRef.current = []
     }
   }, [])
 
-  const hideLoadingScreen = useCallback(() => {
-    if (hasHiddenLoadingRef.current || typeof document === 'undefined') {
-      return
-    }
+  const pushToast = useCallback((toast: ToastPayload) => {
+    const nextId = toast.id ?? `toast-${Date.now()}-${toastIdRef.current}`
+    toastIdRef.current += 1
 
-    const splashElement = document.getElementById('splash-screen')
-    if (!splashElement) {
+    setToasts((previousToasts) => [
+      ...previousToasts,
+      {
+        ...toast,
+        id: nextId,
+      },
+    ])
+  }, [])
+
+  const resetLoadingSequence = useCallback((status: string) => {
+    loadingTimersRef.current.forEach((timerId) => window.clearTimeout(timerId))
+    loadingTimersRef.current = []
+    loadingSequenceRef.current = {
+      index: 0,
+      running: false,
+      finished: false,
+      failed: {},
+    }
+    hasHiddenLoadingRef.current = false
+    setLoadingVisible(true)
+    setLoadingStatus(status)
+  }, [])
+
+  const beginLoadingSequence = useCallback(() => {
+    resetLoadingSequence('Loading students...')
+    setAppStage('loading')
+  }, [resetLoadingSequence])
+
+  const hideLoadingScreen = useCallback(() => {
+    if (hasHiddenLoadingRef.current) {
       return
     }
 
     hasHiddenLoadingRef.current = true
-    splashElement.classList.add('hide')
-    splashElement.setAttribute('aria-hidden', 'true')
+    setLoadingVisible(false)
+    setAppStage('ready')
   }, [])
+
+  const showLogin = useCallback(
+    (message?: string) => {
+      setAppStage('login')
+      setLoadingVisible(false)
+
+      if (message) {
+        pushToast({
+          type: 'warning',
+          title: 'MySQL connection',
+          message,
+        })
+      }
+    },
+    [pushToast],
+  )
+
+  const prepareDatabase = useCallback(
+    async (payload: DatabaseConfigPayload) => {
+      await invoke('test_mysql_database_connection', { payload })
+      await invoke('configure_mysql_database', { payload })
+
+      try {
+        await invoke('initialize_mysql_schema')
+      } catch (error) {
+        const message = getErrorMessage(error)
+        pushToast({
+          type: 'error',
+          title: 'Database initialization failed',
+          message: message
+            ? `MySQL: ${message}`
+            : 'MySQL: Unable to initialize the schema.',
+        })
+      }
+    },
+    [pushToast],
+  )
 
   useEffect(() => {
-    if (!isTauri()) {
-      return
+    let isActive = true
+
+    const bootstrap = async () => {
+      setAppStage('checking')
+      setLoadingVisible(true)
+      setLoadingStatus(CHECKING_STATUS)
+
+      if (!isTauri()) {
+        if (isActive) {
+          beginLoadingSequence()
+        }
+        return
+      }
+
+      const { payload, error } = buildDatabasePayload(DEFAULT_LOGIN_FORM)
+      if (!payload) {
+        if (isActive) {
+          showLogin(error ?? 'Database credentials are required.')
+        }
+        return
+      }
+
+      try {
+        await prepareDatabase(payload)
+        if (isActive) {
+          beginLoadingSequence()
+        }
+      } catch (error) {
+        if (!isActive) {
+          return
+        }
+
+        const message = getErrorMessage(error)
+        showLogin(
+          message
+            ? `Unable to connect to MySQL. ${message}`
+            : 'Unable to connect to MySQL. Please enter your credentials.',
+        )
+      }
     }
 
-    void invoke('initialize_mysql_schema').catch((error) => {
-      console.error('Failed to initialize MySQL schema:', error)
-    })
-  }, [])
+    void bootstrap()
+
+    return () => {
+      isActive = false
+    }
+  }, [beginLoadingSequence, prepareDatabase, showLogin])
 
   const onSelectPanel = (panel: PanelKey) => {
     setActivePanel(panel)
@@ -154,22 +306,67 @@ export function useAppViewModel(): AppViewProps {
     void runWindowAction((appWindow) => appWindow.close())
   }
 
-  const onShowToast = useCallback((toast: ToastPayload) => {
-    const nextId = toast.id ?? `toast-${Date.now()}-${toastIdRef.current}`
-    toastIdRef.current += 1
-
-    setToasts((previousToasts) => [
-      ...previousToasts,
-      {
-        ...toast,
-        id: nextId,
-      },
-    ])
-  }, [])
+  const onShowToast = pushToast
 
   const onDismissToast = (id: string) => {
     setToasts((previousToasts) => previousToasts.filter((toast) => toast.id !== id))
   }
+
+  const onLoginFieldChange = useCallback(
+    (field: keyof LoginFormValues, value: string) => {
+      setLoginForm((previous) => ({
+        ...previous,
+        [field]: value,
+      }))
+    },
+    [],
+  )
+
+  const onLoginSubmit = useCallback(async () => {
+    if (isLoginBusy) {
+      return
+    }
+
+    const { payload, error } = buildDatabasePayload(loginForm)
+    if (!payload) {
+      pushToast({
+        type: 'warning',
+        title: 'MySQL login',
+        message: error ?? 'Please fill in all required fields.',
+      })
+      return
+    }
+
+    if (!isTauri()) {
+      pushToast({
+        type: 'error',
+        title: 'MySQL login',
+        message: 'MySQL login is only available in the Tauri runtime.',
+      })
+      return
+    }
+
+    setLoginBusy(true)
+    setAppStage('checking')
+    setLoadingVisible(true)
+    setLoadingStatus(CHECKING_STATUS)
+
+    try {
+      await prepareDatabase(payload)
+      beginLoadingSequence()
+    } catch (error) {
+      const message = getErrorMessage(error)
+      setAppStage('login')
+      setLoadingVisible(false)
+      pushToast({
+        type: 'error',
+        title: 'MySQL connection failed',
+        message: message ? `MySQL: ${message}` : 'MySQL: Unable to connect.',
+      })
+    } finally {
+      setLoginBusy(false)
+    }
+  }, [beginLoadingSequence, isLoginBusy, loginForm, prepareDatabase, pushToast])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -182,7 +379,7 @@ export function useAppViewModel(): AppViewProps {
         return
       }
 
-      onShowToast(customEvent.detail)
+      pushToast(customEvent.detail)
     }
 
     window.addEventListener(TOAST_EVENT, handleToastEvent)
@@ -190,7 +387,7 @@ export function useAppViewModel(): AppViewProps {
     return () => {
       window.removeEventListener(TOAST_EVENT, handleToastEvent)
     }
-  }, [onShowToast])
+  }, [pushToast])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -227,19 +424,23 @@ export function useAppViewModel(): AppViewProps {
       state.running = true
 
       if (failed) {
-        updateLoadingStatus(`Loading ${label} failed.`)
+        setLoadingStatus(`Loading ${label} failed.`)
         scheduleTimer(advanceSequence, 600)
         return
       }
 
-      updateLoadingStatus(`Loading ${label}...`)
+      setLoadingStatus(`Loading ${label}...`)
       scheduleTimer(() => {
-        updateLoadingStatus(`Loaded ${label}.`)
+        setLoadingStatus(`Loaded ${label}.`)
       }, 450)
       scheduleTimer(advanceSequence, 800)
     }
 
     const handleStatusEvent = (event: Event) => {
+      if (appStage !== 'loading' && appStage !== 'ready') {
+        return
+      }
+
       const customEvent = event as CustomEvent<LoadingStatusPayload>
       if (!customEvent.detail) {
         return
@@ -265,17 +466,24 @@ export function useAppViewModel(): AppViewProps {
     return () => {
       window.removeEventListener(LOADING_STATUS_EVENT, handleStatusEvent)
     }
-  }, [hideLoadingScreen])
+  }, [appStage, hideLoadingScreen])
 
   return {
     activePanel,
     theme,
     toasts,
+    appStage,
+    isLoadingVisible,
+    loadingStatus,
+    loginForm,
+    isLoginBusy,
     onToggleTheme,
     onSelectPanel,
     onMinimizeWindow,
     onCloseWindow,
     onShowToast,
     onDismissToast,
+    onLoginFieldChange,
+    onLoginSubmit,
   }
 }

@@ -157,6 +157,11 @@ body {
   max-width: 1200px;
 }
 
+.login-card {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
 .app-titlebar {
   position: sticky;
   top: 0;
