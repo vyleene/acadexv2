@@ -8,13 +8,18 @@ interface TitleBarProps {
 
 function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
   return (
-    <header className="app-titlebar" id="app-titlebar">
-      <div className="app-titlebar__drag-area" data-tauri-drag-region>
+    <header className="app-titlebar" id="app-titlebar" data-tauri-drag-region>
+      <div className="app-titlebar__drag-area">
         <div className="app-titlebar__brand">
           <img src="/img/appIcon.ico" alt="Acadex logo" className="app-titlebar__logo" draggable={false} />
           <span className="app-titlebar__title">cadex</span>
         </div>
       </div>
+
+      <div className="app-titlebar__system">
+        <span className="app-titlebar__system-text">Simple Student Information System</span>
+      </div>
+
       <Stack direction="horizontal" gap={2} className="app-titlebar__actions">
         <Button
           variant="link"

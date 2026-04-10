@@ -315,60 +315,119 @@ body {
   position: sticky;
   top: 0;
   z-index: 1100;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
+  gap: 0.65rem;
+  min-height: 40px;
+  padding: 5px 12px;
   background: var(--app-titlebar-surface, var(--app-surface));
   border-bottom: 1px solid var(--app-border);
 }
 
+.app-titlebar,
+.app-titlebar__drag-area,
+.app-titlebar__brand,
+.app-titlebar__system {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.app-titlebar__actions,
+.app-titlebar__actions *,
+.titlebar-btn,
+.titlebar-btn * {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 .app-titlebar__drag-area {
-  flex: 1;
   min-width: 0;
+  justify-self: start;
+  width: 100%;
   display: flex;
   align-items: center;
+}
+
+.app-titlebar__brand,
+.app-titlebar__system {
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .app-titlebar__brand {
   display: flex;
   align-items: center;
-  gap: 0.08rem;
+  gap: 0.06rem;
   color: var(--app-text);
 }
 
 .app-titlebar__logo {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .app-titlebar__title {
   font-family: 'BlackChancery', serif;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   line-height: 1;
   letter-spacing: 0.02em;
-  margin-left: -0.25rem;
-  transform: translateY(1.5px);
+  margin-left: -0.22rem;
+  transform: translateY(1.1px);
 }
 
-.app-titlebar__actions {
+.app-titlebar__system {
+  justify-self: center;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.42rem;
+  color: var(--app-muted);
 }
 
-.titlebar-btn {
-  width: 34px;
-  height: 28px;
-  padding: 0 !important;
-  border-radius: 8px;
+.app-titlebar__system-short {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 0.08rem 0.42rem;
+  border-radius: 999px;
   border: 1px solid var(--app-border);
   background: var(--app-soft);
   color: var(--app-text);
-  font-size: 16px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.app-titlebar__system-text {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.app-titlebar__actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.titlebar-btn {
+  width: 30px;
+  height: 24px;
+  padding: 0 !important;
+  border-radius: 7px;
+  border: 1px solid var(--app-border);
+  background: var(--app-soft);
+  color: var(--app-text);
+  font-size: 14px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -381,8 +440,8 @@ body {
 
 .u-titlebar-icon,
 .page-link--icon .u-icon {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 0.78rem;
+  height: 0.78rem;
 }
 
 .titlebar-btn:hover,
@@ -1390,6 +1449,37 @@ body {
 
 /* ===== 17. Responsive Adjustments ===== */
 @media (max-width: 768px) {
+  .app-titlebar {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.5rem;
+    min-height: 36px;
+    padding: 4px 10px;
+  }
+
+  .app-titlebar__logo {
+    width: 21px;
+    height: 21px;
+  }
+
+  .app-titlebar__title {
+    font-size: 0.96rem;
+  }
+
+  .app-titlebar__system-text {
+    display: none;
+  }
+
+  .app-titlebar__system-short {
+    min-height: 18px;
+    padding: 0.05rem 0.36rem;
+    font-size: 0.6rem;
+  }
+
+  .titlebar-btn {
+    width: 28px;
+    height: 22px;
+  }
+
   .app-settings-modal {
     margin: 0.65rem;
   }
