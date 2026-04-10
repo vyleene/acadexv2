@@ -16,5 +16,6 @@ pub struct CreateCollegePayload {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateCollegePayload {
+    pub code: String,
     pub name: String,
 }

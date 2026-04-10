@@ -47,12 +47,14 @@ impl ProgramsRepository {
         payload: UpdateProgramPayload,
     ) -> Result<Program, String> {
         let code = normalize_code(&code, "program code")?;
+        let updated_code = normalize_code(&payload.code, "program code")?;
         let name = normalize_name(&payload.name, "program name", 128)?;
         let college_code = normalize_code(&payload.college_code, "college code")?;
         let pool = database.pool()?;
 
         let update_result =
-            sqlx::query("UPDATE programs SET name = ?, college_code = ? WHERE code = ?")
+            sqlx::query("UPDATE programs SET code = ?, name = ?, college_code = ? WHERE code = ?")
+            .bind(&updated_code)
             .bind(&name)
             .bind(&college_code)
             .bind(&code)
@@ -65,7 +67,7 @@ impl ProgramsRepository {
         }
 
         Ok(Program {
-            code,
+            code: updated_code,
             name,
             college_code: Some(college_code),
         })

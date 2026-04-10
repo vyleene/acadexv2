@@ -11,7 +11,7 @@
   --app-primary-contrast: var(--bs-white);
   --app-danger: var(--bs-danger);
   --app-danger-bg: var(--bs-danger-bg-subtle);
-  --app-overlay: color-mix(in srgb, var(--bs-body-bg) 70%, transparent);
+  --app-overlay: rgba(15, 23, 42, 0.28);
   --app-input-bg: var(--bs-body-bg);
   --app-input-border: var(--bs-border-color);
   --app-input-text: var(--bs-body-color);
@@ -45,6 +45,7 @@ html[data-bs-theme="light"] {
   --app-input-border: #c2cee4;
   --app-shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.1);
   --app-shadow-card: 0 18px 38px rgba(15, 23, 42, 0.15);
+  --app-overlay: rgba(241, 246, 255, 0.3);
   --bs-primary: var(--app-primary);
   --bs-primary-rgb: 47, 107, 255;
   --bs-link-color: var(--app-primary);
@@ -67,6 +68,7 @@ html[data-bs-theme="dark"] {
   --app-input-border: #4a515a;
   --app-shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.45);
   --app-shadow-card: 0 20px 42px rgba(0, 0, 0, 0.6);
+  --app-overlay: rgba(8, 10, 14, 0.3);
   --app-titlebar-surface: #17191d;
   --bs-primary: var(--app-primary);
   --bs-primary-rgb: 255, 209, 102;
@@ -330,7 +332,6 @@ body {
 .app-titlebar__brand,
 .app-titlebar__system {
   -webkit-app-region: drag;
-  app-region: drag;
 }
 
 .app-titlebar__actions,
@@ -338,7 +339,6 @@ body {
 .titlebar-btn,
 .titlebar-btn * {
   -webkit-app-region: no-drag;
-  app-region: no-drag;
 }
 
 .app-titlebar__drag-area {
@@ -476,7 +476,7 @@ body {
   position: fixed;
   top: 58px;
   right: calc(50% - 590px);
-  z-index: 1300;
+  z-index: 9999;
 }
 
 .toast {
@@ -1000,6 +1000,11 @@ body {
 .form-control:focus,
 .form-select:focus {
   box-shadow: none;
+}
+
+#student-id-year:disabled,
+#student-id-number:disabled {
+  cursor: not-allowed;
 }
 
 .input-group-text:focus,

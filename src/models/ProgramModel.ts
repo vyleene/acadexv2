@@ -16,6 +16,7 @@ export type CreateProgramPayload = {
 }
 
 export type UpdateProgramPayload = {
+  code: string
   name: string
   college_code: string
 }

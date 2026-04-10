@@ -94,6 +94,16 @@ function populateIdYearOptions(
   selectedYear?: string,
 ) {
   const years = getIdYearOptions(currentYear)
+
+  if (typeof selectedYear === 'string' && /^\d{4}$/.test(selectedYear)) {
+    const selectedYearNumber = Number.parseInt(selectedYear, 10)
+
+    if (!years.includes(selectedYearNumber)) {
+      years.push(selectedYearNumber)
+      years.sort((left, right) => left - right)
+    }
+  }
+
   selectElement.replaceChildren()
 
   for (const year of years) {
@@ -154,13 +164,10 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
     pageIndex: 0,
     pageSize: STUDENT_ROWS_PER_PAGE,
   })
-  const handleLoadError = useCallback((message: string) => {
+  const handleLoadError = useCallback((_message: string) => {
     dispatchToast({
       type: 'error',
-      title: 'Students',
-      message: message
-        ? `Student: Failed to load students. ${message}`
-        : 'Student: Failed to load students.',
+      message: 'Unable to load students.',
     })
   }, [])
 
@@ -278,7 +285,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       programSelect.disabled = true
 
       try {
-        const programCodes = await fetchProgramCodes()
+        const programCodes = await fetchProgramCodes(true)
         setProgramOptions(programSelect, programCodes, selectedProgramCode)
       } finally {
         programSelect.disabled = false
@@ -303,7 +310,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         }
 
         if (idNumberInput) {
-          idNumberInput.readOnly = false
+          idNumberInput.disabled = false
           idNumberInput.value = ''
           idNumberInput.placeholder = 'NNNN'
         }
@@ -347,7 +354,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       }
 
       if (idNumberInput) {
-        idNumberInput.readOnly = true
+        idNumberInput.disabled = true
         idNumberInput.value = idNumber
         idNumberInput.placeholder = 'NNNN'
       }
@@ -382,45 +389,61 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         form.reportValidity()
         dispatchToast({
           type: 'warning',
-          title: 'Student form incomplete',
-          message: 'Student: Please complete the required fields before saving.',
+          message: 'Complete all required student fields.',
         })
         return
       }
 
+      const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
       const idYearValue = idYearSelect?.value ?? ''
       const idNumberValue = idNumberInput?.value ?? ''
       const studentId = buildStudentId(idYearValue, idNumberValue)
-
-      if (!studentId) {
-        console.error('Invalid student ID format. Expected YYYY-NNNN.')
-        dispatchToast({
-          type: 'error',
-          title: 'Invalid student ID',
-          message: 'Student: ID must follow the YYYY-NNNN format.',
-        })
-        return
-      }
 
       const firstName = sanitizeStudentNameInput(firstNameInput?.value ?? '').trim()
       const lastName = sanitizeStudentNameInput(lastNameInput?.value ?? '').trim()
       const year = yearSelect?.value ?? ''
       const gender = genderSelect?.value ?? ''
       const programCode = programSelect?.value ?? ''
-      const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+
+      if (mode === 'add' && !studentId) {
+        console.error('Invalid student ID format. Expected YYYY-NNNN.')
+        dispatchToast({
+          type: 'error',
+          message: 'Enter student ID in YYYY-NNNN format.',
+        })
+        return
+      }
+
       const originalStudentId = Number.parseInt(form.dataset.studentId ?? '', 10)
-      const targetStudentId =
-        mode === 'edit' && Number.isFinite(originalStudentId)
-          ? originalStudentId
-          : studentId
-      const actionVerb = mode === 'add' ? 'add' : 'update'
-      const actionResult = mode === 'add' ? 'added' : 'updated'
+      let targetStudentId: number
+
+      if (mode === 'edit') {
+        if (!Number.isFinite(originalStudentId)) {
+          dispatchToast({
+            type: 'error',
+            message: 'Unable to edit student with invalid ID.',
+          })
+          return
+        }
+
+        targetStudentId = originalStudentId
+      } else {
+        if (!studentId) {
+          dispatchToast({
+            type: 'error',
+            message: 'Enter student ID in YYYY-NNNN format.',
+          })
+          return
+        }
+
+        targetStudentId = studentId
+      }
+      const actionVerb = mode === 'add' ? 'add' : 'edit'
 
       if (!firstName || !lastName) {
         dispatchToast({
           type: 'warning',
-          title: 'Student form incomplete',
-          message: 'Student: First name and last name must contain letters only.',
+          message: 'Student names must contain letters only.',
         })
         return
       }
@@ -438,7 +461,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       try {
         if (mode === 'add') {
           await createStudent({
-            id: studentId,
+            id: targetStudentId,
             program_code: programCode,
             firstname: firstName,
             lastname: lastName,
@@ -457,42 +480,63 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
 
         await refreshStudents()
 
-        const studentName = `${firstName} ${lastName}`.trim()
-        const studentLabel = studentName || formatStudentId(targetStudentId)
+        const formattedStudentId = formatStudentId(targetStudentId)
         dispatchToast({
           type: 'success',
-          title: `Student ${actionResult}`,
-          message: `Student: ${studentLabel} was ${actionResult}.`,
+          message:
+            mode === 'add'
+              ? `Added student ID: ${formattedStudentId}`
+              : `Edited student ID: ${formattedStudentId}`,
         })
 
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
-        const message = getErrorMessage(error)
         console.error('Failed to save student:', error)
+        const rawErrorMessage = getErrorMessage(error, '').toLowerCase()
+        const formattedStudentId = formatStudentId(targetStudentId)
+
+        let message = `Unable to ${actionVerb} student.`
+
+        if (rawErrorMessage.includes('duplicate entry') || rawErrorMessage.includes('1062')) {
+          message = `Unable to ${actionVerb} student with duplicate ID: ${formattedStudentId}`
+        } else if (rawErrorMessage.includes('foreign key') || rawErrorMessage.includes('1452')) {
+          message = `Unable to ${actionVerb} student with invalid program code.`
+        } else if (rawErrorMessage.includes('not found')) {
+          message = `Unable to ${actionVerb} student with missing ID: ${formattedStudentId}`
+        }
+
         dispatchToast({
           type: 'error',
-          title: `Student ${actionVerb} failed`,
-          message: message
-            ? `Student: Unable to ${actionVerb} student. ${message}`
-            : `Student: Unable to ${actionVerb} student.`,
+          message,
         })
       } finally {
         submitButton.removeAttribute('disabled')
       }
     }
 
+    const handleProgramsRefresh = () => {
+      if (!modalElement.classList.contains('show')) {
+        return
+      }
+
+      const selectedProgramCode = normalizeProgramCode(programSelect?.value)
+      void populateProgramSelect(selectedProgramCode)
+    }
+
     firstNameInput?.addEventListener('input', handleFirstNameInput)
     lastNameInput?.addEventListener('input', handleLastNameInput)
     modalElement.addEventListener('show.bs.modal', handleShow)
     form.addEventListener('submit', handleSubmit)
+    window.addEventListener(PROGRAMS_REFRESH_EVENT, handleProgramsRefresh)
 
     return () => {
       firstNameInput?.removeEventListener('input', handleFirstNameInput)
       lastNameInput?.removeEventListener('input', handleLastNameInput)
       modalElement.removeEventListener('show.bs.modal', handleShow)
       form.removeEventListener('submit', handleSubmit)
+      window.removeEventListener(PROGRAMS_REFRESH_EVENT, handleProgramsRefresh)
     }
   }, [])
 
@@ -532,8 +576,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         console.error('Invalid student id for delete:', studentIdRaw)
         dispatchToast({
           type: 'error',
-          title: 'Invalid student ID',
-          message: 'Student: Unable to delete because the ID is invalid.',
+          message: 'Unable to delete student with invalid ID.',
         })
         return
       }
@@ -546,21 +589,24 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         const studentLabel = formatStudentId(studentId)
         dispatchToast({
           type: 'success',
-          title: 'Student deleted',
-          message: `Student: ${studentLabel} was deleted.`,
+          message: `Deleted student ID: ${studentLabel}`,
         })
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
-        const message = getErrorMessage(error)
         console.error('Failed to delete student:', error)
+        const rawErrorMessage = getErrorMessage(error, '').toLowerCase()
+
+        let message = 'Unable to delete student.'
+
+        if (rawErrorMessage.includes('not found')) {
+          message = `Unable to delete student with missing ID: ${formatStudentId(studentId)}`
+        }
+
         dispatchToast({
           type: 'error',
-          title: 'Student delete failed',
-          message: message
-            ? `Student: Unable to delete student. ${message}`
-            : 'Student: Unable to delete student.',
+          message,
         })
       } finally {
         confirmButton.removeAttribute('disabled')

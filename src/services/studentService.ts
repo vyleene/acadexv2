@@ -88,12 +88,12 @@ export async function fetchStudentRows(): Promise<StudentRow[]> {
   })
 }
 
-export async function fetchProgramCodes(): Promise<string[]> {
-  if (cachedProgramCodes && Date.now() - programCodesCachedAt < PROGRAM_CODES_CACHE_TTL_MS) {
+export async function fetchProgramCodes(forceRefresh = false): Promise<string[]> {
+  if (!forceRefresh && cachedProgramCodes && Date.now() - programCodesCachedAt < PROGRAM_CODES_CACHE_TTL_MS) {
     return cachedProgramCodes
   }
 
-  if (pendingProgramCodesRequest) {
+  if (!forceRefresh && pendingProgramCodesRequest) {
     return pendingProgramCodesRequest
   }
 

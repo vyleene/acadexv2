@@ -128,13 +128,10 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
     pageIndex: 0,
     pageSize: PROGRAM_ROWS_PER_PAGE,
   })
-  const handleLoadError = useCallback((message: string) => {
+  const handleLoadError = useCallback((_message: string) => {
     dispatchToast({
       type: 'error',
-      title: 'Programs',
-      message: message
-        ? `Program: Failed to load programs. ${message}`
-        : 'Program: Failed to load programs.',
+      message: 'Unable to load programs.',
     })
   }, [])
 
@@ -269,7 +266,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
       const programName = trigger?.dataset.programName ?? ''
 
       if (codeInput) {
-        codeInput.readOnly = true
+        codeInput.readOnly = false
         codeInput.value = normalizeDirectoryCodeInput(programCode)
       }
 
@@ -290,8 +287,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         form.reportValidity()
         dispatchToast({
           type: 'warning',
-          title: 'Program form incomplete',
-          message: 'Program: Please complete the required fields before saving.',
+          message: 'Complete all required program fields.',
         })
         return
       }
@@ -301,9 +297,8 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
       const collegeCode = collegeSelect?.value ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
       const originalProgramCode = normalizeProgramCode(form.dataset.programCode)
-      const targetProgramCode = mode === 'edit' ? originalProgramCode : enteredProgramCode
-      const actionVerb = mode === 'add' ? 'add' : 'update'
-      const actionResult = mode === 'add' ? 'added' : 'updated'
+      const targetProgramCode = enteredProgramCode
+      const actionVerb = mode === 'add' ? 'add' : 'edit'
 
       if (codeInput) {
         codeInput.value = enteredProgramCode
@@ -313,8 +308,16 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         console.error('Program code is required to save changes.')
         dispatchToast({
           type: 'error',
-          title: 'Program code required',
-          message: 'Program: Enter a program code before saving.',
+          message: 'Enter program code.',
+        })
+        return
+      }
+
+      if (mode === 'edit' && !originalProgramCode) {
+        console.error('Original program code is missing for update.')
+        dispatchToast({
+          type: 'error',
+          message: 'Unable to edit program with invalid original code.',
         })
         return
       }
@@ -325,17 +328,21 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         if (mode === 'add') {
           await createProgram({ code: targetProgramCode, name: programName, college_code: collegeCode })
         } else {
-          await updateProgram(targetProgramCode, { name: programName, college_code: collegeCode })
+          await updateProgram(originalProgramCode, {
+            code: targetProgramCode,
+            name: programName,
+            college_code: collegeCode,
+          })
         }
 
         const programLabel =
           programName ? `${programName} (${targetProgramCode})` : targetProgramCode
         dispatchToast({
           type: 'success',
-          title: `Program ${actionResult}`,
-          message: programLabel
-            ? `Program: ${programLabel} was ${actionResult}.`
-            : `Program: Program was ${actionResult}.`,
+          message:
+            mode === 'add'
+              ? `Added program: ${programLabel}`
+              : `Edited program: ${programLabel}`,
         })
 
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
@@ -343,28 +350,47 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
-        const message = getErrorMessage(error)
         console.error('Failed to save program:', error)
+        const rawErrorMessage = getErrorMessage(error, '').toLowerCase()
+
+        let message = `Unable to ${actionVerb} program.`
+
+        if (rawErrorMessage.includes('duplicate entry') || rawErrorMessage.includes('1062')) {
+          message = `Unable to ${actionVerb} program with duplicate code: ${targetProgramCode}`
+        } else if (rawErrorMessage.includes('foreign key') || rawErrorMessage.includes('1452')) {
+          message = `Unable to ${actionVerb} program with invalid college code.`
+        } else if (rawErrorMessage.includes('not found')) {
+          message = `Unable to ${actionVerb} program with missing code: ${originalProgramCode}`
+        }
+
         dispatchToast({
           type: 'error',
-          title: `Program ${actionVerb} failed`,
-          message: message
-            ? `Program: Unable to ${actionVerb} program. ${message}`
-            : `Program: Unable to ${actionVerb} program.`,
+          message,
         })
       } finally {
         submitButton.removeAttribute('disabled')
       }
     }
 
+    const handleCollegesRefresh = () => {
+      if (!modalElement.classList.contains('show')) {
+        return
+      }
+
+      const selectedCollegeCode = normalizeCollegeCode(collegeSelect?.value)
+      void populateCollegeSelect(selectedCollegeCode)
+    }
+
     codeInput?.addEventListener('input', handleCodeInput)
     modalElement.addEventListener('show.bs.modal', handleShow)
     form.addEventListener('submit', handleSubmit)
+    window.addEventListener(COLLEGES_REFRESH_EVENT, handleCollegesRefresh)
 
     return () => {
       codeInput?.removeEventListener('input', handleCodeInput)
       modalElement.removeEventListener('show.bs.modal', handleShow)
       form.removeEventListener('submit', handleSubmit)
+      window.removeEventListener(COLLEGES_REFRESH_EVENT, handleCollegesRefresh)
     }
   }, [])
 
@@ -390,7 +416,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
 
       hiddenInput.value = programCode
       warningElement.textContent = programCode
-        ? `Program: ${programName || 'Unknown'} (${programCode})`
+        ? `${programName || 'Unknown'} (${programCode})`
         : ''
     }
 
@@ -401,8 +427,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         console.error('Invalid program code for delete.')
         dispatchToast({
           type: 'error',
-          title: 'Invalid program code',
-          message: 'Program: Unable to delete because the code is invalid.',
+          message: 'Unable to delete program with invalid code.',
         })
         return
       }
@@ -413,24 +438,27 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         await deleteProgram(programCode)
         dispatchToast({
           type: 'success',
-          title: 'Program deleted',
-          message: programCode
-            ? `Program: ${programCode} was deleted.`
-            : 'Program: Program was deleted.',
+          message: `Deleted program: ${programCode}`,
         })
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
-        const message = getErrorMessage(error)
         console.error('Failed to delete program:', error)
+        const rawErrorMessage = getErrorMessage(error, '').toLowerCase()
+
+        let message = 'Unable to delete program.'
+
+        if (rawErrorMessage.includes('1451') || rawErrorMessage.includes('foreign key')) {
+          message = 'Unable to delete program referenced by existing students.'
+        } else if (rawErrorMessage.includes('not found')) {
+          message = `Unable to delete program with missing code: ${programCode}`
+        }
+
         dispatchToast({
           type: 'error',
-          title: 'Program delete failed',
-          message: message
-            ? `Program: Unable to delete program. ${message}`
-            : 'Program: Unable to delete program.',
+          message,
         })
       } finally {
         confirmButton.removeAttribute('disabled')

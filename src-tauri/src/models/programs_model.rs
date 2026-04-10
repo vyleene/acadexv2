@@ -18,6 +18,7 @@ pub struct CreateProgramPayload {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateProgramPayload {
+    pub code: String,
     pub name: String,
     pub college_code: String,
 }

@@ -100,13 +100,10 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
     pageIndex: 0,
     pageSize: COLLEGE_ROWS_PER_PAGE,
   })
-  const handleLoadError = useCallback((message: string) => {
+  const handleLoadError = useCallback((_message: string) => {
     dispatchToast({
       type: 'error',
-      title: 'Colleges',
-      message: message
-        ? `College: Failed to load colleges. ${message}`
-        : 'College: Failed to load colleges.',
+      message: 'Unable to load colleges.',
     })
   }, [])
 
@@ -217,7 +214,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
       submitButton.textContent = 'Save Changes'
 
       if (codeInput) {
-        codeInput.readOnly = true
+        codeInput.readOnly = false
         codeInput.value = normalizeDirectoryCodeInput(collegeCode)
       }
 
@@ -234,8 +231,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         form.reportValidity()
         dispatchToast({
           type: 'warning',
-          title: 'College form incomplete',
-          message: 'College: Please complete the required fields before saving.',
+          message: 'Complete all required college fields.',
         })
         return
       }
@@ -244,9 +240,8 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
       const collegeName = nameInput?.value.trim() ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
       const originalCollegeCode = normalizeCollegeCode(form.dataset.collegeCode)
-      const targetCollegeCode = mode === 'edit' ? originalCollegeCode : enteredCollegeCode
-      const actionVerb = mode === 'add' ? 'add' : 'update'
-      const actionResult = mode === 'add' ? 'added' : 'updated'
+      const targetCollegeCode = enteredCollegeCode
+      const actionVerb = mode === 'add' ? 'add' : 'edit'
 
       if (codeInput) {
         codeInput.value = enteredCollegeCode
@@ -256,8 +251,16 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         console.error('College code is required to save changes.')
         dispatchToast({
           type: 'error',
-          title: 'College code required',
-          message: 'College: Enter a college code before saving.',
+          message: 'Enter college code.',
+        })
+        return
+      }
+
+      if (mode === 'edit' && !originalCollegeCode) {
+        console.error('Original college code is missing for update.')
+        dispatchToast({
+          type: 'error',
+          message: 'Unable to edit college with invalid original code.',
         })
         return
       }
@@ -268,17 +271,20 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         if (mode === 'add') {
           await createCollege({ code: targetCollegeCode, name: collegeName })
         } else {
-          await updateCollege(targetCollegeCode, { name: collegeName })
+          await updateCollege(originalCollegeCode, {
+            code: targetCollegeCode,
+            name: collegeName,
+          })
         }
 
         const collegeLabel =
           collegeName ? `${collegeName} (${targetCollegeCode})` : targetCollegeCode
         dispatchToast({
           type: 'success',
-          title: `College ${actionResult}`,
-          message: collegeLabel
-            ? `College: ${collegeLabel} was ${actionResult}.`
-            : `College: College was ${actionResult}.`,
+          message:
+            mode === 'add'
+              ? `Added college: ${collegeLabel}`
+              : `Edited college: ${collegeLabel}`,
         })
 
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
@@ -286,14 +292,22 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
-        const message = getErrorMessage(error)
         console.error('Failed to save college:', error)
+        const rawErrorMessage = getErrorMessage(error, '').toLowerCase()
+
+        let message = `Unable to ${actionVerb} college.`
+
+        if (rawErrorMessage.includes('duplicate entry') || rawErrorMessage.includes('1062')) {
+          message = `Unable to ${actionVerb} college with duplicate code: ${targetCollegeCode}`
+        } else if (rawErrorMessage.includes('foreign key') || rawErrorMessage.includes('1452')) {
+          message = `Unable to ${actionVerb} college due to invalid related data.`
+        } else if (rawErrorMessage.includes('not found')) {
+          message = `Unable to ${actionVerb} college with missing code: ${originalCollegeCode}`
+        }
+
         dispatchToast({
           type: 'error',
-          title: `College ${actionVerb} failed`,
-          message: message
-            ? `College: Unable to ${actionVerb} college. ${message}`
-            : `College: Unable to ${actionVerb} college.`,
+          message,
         })
       } finally {
         submitButton.removeAttribute('disabled')
@@ -333,7 +347,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
 
       hiddenInput.value = collegeCode
       warningElement.textContent = collegeCode
-        ? `College: ${collegeName || 'Unknown'} (${collegeCode})`
+        ? `${collegeName || 'Unknown'} (${collegeCode})`
         : ''
     }
 
@@ -344,8 +358,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         console.error('Invalid college code for delete.')
         dispatchToast({
           type: 'error',
-          title: 'Invalid college code',
-          message: 'College: Unable to delete because the code is invalid.',
+          message: 'Unable to delete college with invalid code.',
         })
         return
       }
@@ -356,24 +369,27 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         await deleteCollege(collegeCode)
         dispatchToast({
           type: 'success',
-          title: 'College deleted',
-          message: collegeCode
-            ? `College: ${collegeCode} was deleted.`
-            : 'College: College was deleted.',
+          message: `Deleted college: ${collegeCode}`,
         })
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         closeModal(modalElement)
       } catch (error) {
-        const message = getErrorMessage(error)
         console.error('Failed to delete college:', error)
+        const rawErrorMessage = getErrorMessage(error, '').toLowerCase()
+
+        let message = 'Unable to delete college.'
+
+        if (rawErrorMessage.includes('1451') || rawErrorMessage.includes('foreign key')) {
+          message = 'Unable to delete college referenced by existing programs.'
+        } else if (rawErrorMessage.includes('not found')) {
+          message = `Unable to delete college with missing code: ${collegeCode}`
+        }
+
         dispatchToast({
           type: 'error',
-          title: 'College delete failed',
-          message: message
-            ? `College: Unable to delete college. ${message}`
-            : 'College: Unable to delete college.',
+          message,
         })
       } finally {
         confirmButton.removeAttribute('disabled')

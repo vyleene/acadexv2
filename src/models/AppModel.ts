@@ -10,7 +10,6 @@ export const LOADING_STATUS_EVENT = 'app:loading-status'
 export type ToastItem = {
   id: string
   type: ToastType
-  title: string
   message: string
   duration?: number
 }

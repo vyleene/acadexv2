@@ -39,10 +39,12 @@ impl CollegesRepository {
         payload: UpdateCollegePayload,
     ) -> Result<College, String> {
         let code = normalize_code(&code, "college code")?;
+        let updated_code = normalize_code(&payload.code, "college code")?;
         let name = normalize_name(&payload.name, "college name", 128)?;
         let pool = database.pool()?;
 
-        let update_result = sqlx::query("UPDATE colleges SET name = ? WHERE code = ?")
+        let update_result = sqlx::query("UPDATE colleges SET code = ?, name = ? WHERE code = ?")
+            .bind(&updated_code)
             .bind(&name)
             .bind(&code)
             .execute(&pool)
@@ -53,7 +55,10 @@ impl CollegesRepository {
             return Err(not_found_error("College", "code", &code));
         }
 
-        Ok(College { code, name })
+        Ok(College {
+            code: updated_code,
+            name,
+        })
     }
 
     pub async fn delete(database: &DatabaseModel, code: String) -> Result<bool, String> {

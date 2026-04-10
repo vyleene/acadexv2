@@ -32,14 +32,13 @@ function ToastComponent({ toasts, onDismissToast }: ToastComponentProps) {
 	return (
 		<ToastContainer className="toast-container" aria-live="polite" aria-atomic="true">
 			{toasts.map((toast) => {
-				const title = toast.title || TYPE_LABELS[toast.type]
 				const Icon = TYPE_ICONS[toast.type]
 				const duration = toast.duration ?? DEFAULT_TOAST_DURATION
 				const progressStyle: CSSProperties = {
 					animationDuration: `${duration}ms`,
 				}
 				const variant = TYPE_VARIANTS[toast.type]
-				const displayMessage = toast.message || title
+				const displayMessage = toast.message || TYPE_LABELS[toast.type]
 
 				return (
 					<Toast

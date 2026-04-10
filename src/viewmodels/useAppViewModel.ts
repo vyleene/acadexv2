@@ -110,14 +110,14 @@ const resolveMySqlLoginErrorMessage = (
   }
 
   if (message.includes('access denied')) {
-    return 'Access denied'
+    return 'Access denied.'
   }
 
   if (
     message.includes('invalid credentials') ||
     message.includes('authentication failed')
   ) {
-    return 'Invalid username or password'
+    return 'Invalid username or password.'
   }
 
   if (
@@ -129,10 +129,10 @@ const resolveMySqlLoginErrorMessage = (
     message.includes('unknown host') ||
     message.includes('failed to connect')
   ) {
-    return `Unable to connect ${payload.host}:${payload.port}`
+    return `Unable to connect to ${payload.host}:${payload.port}.`
   }
 
-  return rawMessage ? `MySQL: ${rawMessage}` : 'MySQL: Unable to connect.'
+  return 'Unable to connect.'
 }
 
 const getSystemTheme = (): ThemeMode => {
@@ -318,13 +318,10 @@ export function useAppViewModel(): AppViewProps {
       try {
         await invoke('initialize_mysql_schema')
       } catch (error) {
-        const message = getErrorMessage(error)
+        console.error('Failed to initialize database schema:', error)
         pushToast({
           type: 'error',
-          title: 'Database initialization failed',
-          message: message
-            ? `MySQL: ${message}`
-            : 'MySQL: Unable to initialize the schema.',
+          message: 'Unable to initialize database schema.',
         })
       }
     },
@@ -390,7 +387,6 @@ export function useAppViewModel(): AppViewProps {
     if (!payload) {
       pushToast({
         type: 'warning',
-        title: 'MySQL login',
         message: error ?? 'Please fill in all required fields.',
       })
       return
@@ -399,8 +395,7 @@ export function useAppViewModel(): AppViewProps {
     if (!isTauri()) {
       pushToast({
         type: 'error',
-        title: 'MySQL login',
-        message: 'MySQL login is only available in the Tauri runtime.',
+        message: 'Login is only available in the desktop app.',
       })
       return
     }
@@ -420,7 +415,6 @@ export function useAppViewModel(): AppViewProps {
       setLoadingVisible(false)
       pushToast({
         type: 'error',
-        title: 'MySQL connection failed',
         message: toastMessage,
       })
     } finally {
@@ -436,8 +430,7 @@ export function useAppViewModel(): AppViewProps {
     if (!isTauri()) {
       pushToast({
         type: 'error',
-        title: 'MySQL disconnect',
-        message: 'MySQL disconnect is only available in the Tauri runtime.',
+        message: 'Disconnect is only available in the desktop app.',
       })
       return
     }
@@ -455,11 +448,10 @@ export function useAppViewModel(): AppViewProps {
       }))
       goToLoginStage()
     } catch (error) {
-      const message = getErrorMessage(error)
+      console.error('Failed to disconnect database:', error)
       pushToast({
         type: 'error',
-        title: 'MySQL disconnect failed',
-        message: message ? `MySQL: ${message}` : 'MySQL: Unable to disconnect.',
+        message: 'Unable to disconnect database.',
       })
     } finally {
       setDisconnecting(false)

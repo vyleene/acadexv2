@@ -14,6 +14,7 @@ export type CreateCollegePayload = {
 }
 
 export type UpdateCollegePayload = {
+  code: string
   name: string
 }
 
