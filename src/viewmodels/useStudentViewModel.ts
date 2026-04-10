@@ -196,7 +196,9 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       row.original.lastName,
       row.original.programCode,
       row.original.gender,
+      formatGender(row.original.gender),
       row.original.year,
+      formatYearLevel(row.original.year),
       String(row.original.id),
     ]
       .filter(Boolean)
@@ -204,12 +206,21 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
 
     const combined = fieldValues.join(' ')
     const combinedNoSpace = combined.replace(/\s+/g, '')
+    const hasGenderToken = tokens.some((token) => token === 'male' || token === 'female')
+    const genderValue = formatGender(row.original.gender).toLowerCase()
+    const genderCode = String(row.original.gender ?? '').toLowerCase()
 
-    if (combinedNoSpace.includes(filterNoSpace)) {
+    if (!hasGenderToken && combinedNoSpace.includes(filterNoSpace)) {
       return true
     }
 
-    return tokens.every((token) => combined.includes(token))
+    return tokens.every((token) => {
+      if (token === 'male' || token === 'female') {
+        return token === genderValue || token === genderCode
+      }
+
+      return combined.includes(token)
+    })
   }, [normalizedFilter])
 
   useEffect(() => {
@@ -540,6 +551,8 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
     const handleShow = (event: Event) => {
       const customEvent = event as Event & { relatedTarget?: HTMLElement | null }
       const trigger = customEvent.relatedTarget
+      const rawCollegeCode = trigger?.dataset.studentCollegeCode?.trim() ?? ''
+      const collegeCode = rawCollegeCode && rawCollegeCode !== 'N/A' ? rawCollegeCode.toUpperCase() : ''
 
       idElement.textContent = formatStudentId(trigger?.dataset.studentId)
       nameElement.textContent = trigger?.dataset.studentName ?? 'N/A'
@@ -547,8 +560,14 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       yearElement.textContent = formatYearLevel(trigger?.dataset.studentYear)
       programCodeElement.textContent = trigger?.dataset.studentProgramCode ?? 'N/A'
       programNameElement.textContent = trigger?.dataset.studentProgramName ?? 'N/A'
-      collegeCodeElement.textContent = trigger?.dataset.studentCollegeCode ?? 'N/A'
+      collegeCodeElement.textContent = rawCollegeCode || 'N/A'
       collegeNameElement.textContent = trigger?.dataset.studentCollegeName ?? 'N/A'
+
+      if (collegeCode) {
+        collegeCodeElement.setAttribute('data-college', collegeCode)
+      } else {
+        collegeCodeElement.removeAttribute('data-college')
+      }
     }
 
     modalElement.addEventListener('show.bs.modal', handleShow)
