@@ -12,8 +12,9 @@ function InfoProgramModalComponent() {
     >
       <Modal.Dialog centered>
         <Modal.Header>
-          <Modal.Title id="programInfoModalLabel">
-              Program Information
+          <Modal.Title className="modal-title--main" id="programInfoModalLabel">
+            <DocumentTextIcon className="u-icon" aria-hidden="true" />
+            <span className="u-modal-title-text">Program Information</span>
           </Modal.Title>
           <CloseButton data-bs-dismiss="modal" aria-label="Close" />
         </Modal.Header>
@@ -22,14 +23,14 @@ function InfoProgramModalComponent() {
               <div className="student-info__header">
                 <div>
                   <div className="student-info__label">
-                    <TagIcon className="heroicon-url" aria-hidden="true" />
+                    <TagIcon className="u-icon" aria-hidden="true" />
                     Program Code
                   </div>
                   <div className="student-info__value" id="program-info-code"></div>
                 </div>
                 <div>
                   <div className="student-info__label">
-                    <DocumentTextIcon className="heroicon-url" aria-hidden="true" />
+                    <DocumentTextIcon className="u-icon" aria-hidden="true" />
                     Program Name
                   </div>
                   <div className="student-info__value" id="program-info-name"></div>
@@ -39,7 +40,7 @@ function InfoProgramModalComponent() {
               <div className="student-info__meta mt-3">
                 <div className="student-info__meta-item">
                   <div className="student-info__label">
-                    <UserGroupIcon className="heroicon-url" aria-hidden="true" />
+                    <UserGroupIcon className="u-icon" aria-hidden="true" />
                     Students
                   </div>
                   <div className="student-info__value student-info__chip" id="program-info-student-count"></div>
@@ -49,7 +50,7 @@ function InfoProgramModalComponent() {
               <div className="row g-3 mt-3">
                 <div className="col-12">
                   <div className="student-info__label">
-                    <BuildingLibraryIcon className="heroicon-url" aria-hidden="true" />
+                    <BuildingLibraryIcon className="u-icon" aria-hidden="true" />
                     College
                   </div>
                   <div className="student-info__inline">

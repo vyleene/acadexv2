@@ -162,13 +162,13 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
     }
 
     const modalElement = document.getElementById('collegeModal')
-    const titleElement = document.getElementById('collegeModalLabel')
+    const titleTextElement = document.getElementById('collegeModalTitleText')
     const submitButton = document.getElementById('college-submit') as HTMLButtonElement | null
     const form = document.getElementById('college-form') as HTMLFormElement | null
     const codeInput = document.getElementById('college-code') as HTMLInputElement | null
     const nameInput = document.getElementById('college-name') as HTMLInputElement | null
 
-    if (!modalElement || !titleElement || !submitButton || !form) {
+    if (!modalElement || !titleTextElement || !submitButton || !form) {
       return
     }
 
@@ -180,7 +180,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
       if (mode === 'add') {
         form.dataset.mode = 'add'
         form.dataset.collegeCode = ''
-        titleElement.textContent = 'Add College'
+        titleTextElement.textContent = 'Add College'
         submitButton.textContent = 'Add College'
 
         if (codeInput) {
@@ -198,7 +198,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
       form.dataset.mode = 'edit'
       const collegeCode = normalizeCollegeCode(trigger?.dataset.collegeCode)
       form.dataset.collegeCode = collegeCode
-      titleElement.textContent = 'Edit College'
+      titleTextElement.textContent = 'Edit College'
       submitButton.textContent = 'Save Changes'
 
       if (codeInput) {

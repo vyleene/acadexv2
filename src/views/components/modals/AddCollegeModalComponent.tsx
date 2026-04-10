@@ -6,9 +6,9 @@ function AddCollegeModalComponent() {
     <div className="modal fade" id="collegeModal" tabIndex={-1} aria-labelledby="collegeModalLabel" aria-hidden="true">
       <Modal.Dialog centered>
         <Modal.Header>
-          <Modal.Title className="d-flex align-items-center gap-2" id="collegeModalLabel">
-              <BuildingLibraryIcon className="heroicon-url" aria-hidden="true" />
-              Add College
+          <Modal.Title className="modal-title--main" id="collegeModalLabel">
+            <BuildingLibraryIcon className="u-icon" aria-hidden="true" />
+            <span id="collegeModalTitleText" className="u-modal-title-text">Add College</span>
           </Modal.Title>
           <CloseButton data-bs-dismiss="modal" aria-label="Close" />
         </Modal.Header>
@@ -16,24 +16,20 @@ function AddCollegeModalComponent() {
         <Form id="college-form" data-mode="add">
           <Modal.Body>
             <Form.Group className="mb-3" controlId="college-code">
-              <Form.Label>
-                  College Code
-              </Form.Label>
+              <Form.Label>College Code</Form.Label>
               <InputGroup>
                 <InputGroup.Text>
-                    <TagIcon className="heroicon-url" aria-hidden="true" />
+                  <TagIcon className="u-icon" aria-hidden="true" />
                 </InputGroup.Text>
                 <Form.Control id="college-code" name="collegeCode" type="text" required />
               </InputGroup>
             </Form.Group>
 
             <Form.Group controlId="college-name">
-              <Form.Label>
-                  College Name
-              </Form.Label>
+              <Form.Label>College Name</Form.Label>
               <InputGroup>
                 <InputGroup.Text>
-                    <DocumentTextIcon className="heroicon-url" aria-hidden="true" />
+                  <DocumentTextIcon className="u-icon" aria-hidden="true" />
                 </InputGroup.Text>
                 <Form.Control id="college-name" name="collegeName" type="text" required />
               </InputGroup>
@@ -42,10 +38,10 @@ function AddCollegeModalComponent() {
 
           <Modal.Footer>
             <Button type="button" variant="danger" data-bs-dismiss="modal">
-                Cancel
+              Cancel
             </Button>
             <Button type="submit" variant="success" id="college-submit">
-                Add College
+              Add College
             </Button>
           </Modal.Footer>
         </Form>

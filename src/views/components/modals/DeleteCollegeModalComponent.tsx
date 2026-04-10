@@ -1,3 +1,4 @@
+import { TrashIcon } from '@heroicons/react/24/outline'
 import { Button, CloseButton, Form, Modal } from 'react-bootstrap'
 
 function DeleteCollegeModalComponent() {
@@ -11,8 +12,9 @@ function DeleteCollegeModalComponent() {
     >
       <Modal.Dialog centered>
         <Modal.Header>
-          <Modal.Title id="deleteCollegeModalLabel">
-              Delete College
+          <Modal.Title className="modal-title--main" id="deleteCollegeModalLabel">
+            <TrashIcon className="u-icon" aria-hidden="true" />
+            <span className="u-modal-title-text">Delete College</span>
           </Modal.Title>
           <CloseButton data-bs-dismiss="modal" aria-label="Close" />
         </Modal.Header>
@@ -22,11 +24,11 @@ function DeleteCollegeModalComponent() {
           <Form.Control type="hidden" id="delete-college-id" name="collegeId" />
         </Modal.Body>
         <Modal.Footer>
-          <Button type="button" variant="outline-secondary" data-bs-dismiss="modal">
-              Cancel
+          <Button type="button" variant="secondary" data-bs-dismiss="modal">
+            Cancel
           </Button>
           <Button type="button" variant="danger" id="confirm-delete-college">
-              Delete
+            Delete
           </Button>
         </Modal.Footer>
       </Modal.Dialog>

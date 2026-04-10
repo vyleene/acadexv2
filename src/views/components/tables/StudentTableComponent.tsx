@@ -5,7 +5,7 @@ import {
 	ChevronDownIcon,
 	ChevronUpIcon,
 	MagnifyingGlassIcon,
-	UserPlusIcon,
+	PlusIcon,
 } from '@heroicons/react/24/outline'
 import { type Table as ReactTable, flexRender } from '@tanstack/react-table'
 import { Button, Form, InputGroup, Table } from 'react-bootstrap'
@@ -102,18 +102,18 @@ function StudentTableComponent({
 				<div className="table-toolbar__actions" role="group" aria-label="Student directory actions">
 					<Button
 						variant="primary"
-						className="d-inline-flex align-items-center gap-2"
+						className="u-btn-icon table-toolbar__icon-btn"
 						id="btn-add-student"
 						type="button"
 						data-bs-toggle="modal"
 						data-bs-target="#studentModal"
 						data-modal-mode="add"
 					>
-						<UserPlusIcon className="heroicon-url" aria-hidden="true" />
+						<PlusIcon className="u-icon" aria-hidden="true" />
 					</Button>
 					<Button
 						variant="secondary"
-						className="d-inline-flex align-items-center table-toolbar__icon-btn"
+						className="u-btn-icon table-toolbar__icon-btn"
 						id="btn-refresh-student"
 						type="button"
 						aria-label="Refresh students"
@@ -122,7 +122,7 @@ function StudentTableComponent({
 						}}
 						disabled={isLoading || isRefreshing}
 					>
-						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
+						<ArrowPathIcon className="u-icon" aria-hidden="true" />
 					</Button>
 				</div>
 			</div>

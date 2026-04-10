@@ -9,8 +9,12 @@ function LoadingScreenView({ isVisible, status }: LoadingScreenViewProps) {
 	return (
 		<div id="splash-screen" className={containerClassName} aria-hidden={!isVisible}>
 			<div className="loading-screen__content">
-				<div className="loading-screen__icon" aria-hidden="true" />
-				<div className="loading-screen__title">Acadex</div>
+				<div className="loading-screen__title" aria-label="Acadex">
+					<span className="loading-screen__icon" aria-hidden="true" />
+					<span className="loading-screen__title-text" aria-hidden="true">
+						cadex
+					</span>
+				</div>
 				<div className="loading-screen__bar" aria-hidden="true">
 					<span className="loading-screen__bar-fill" />
 				</div>

@@ -4,7 +4,8 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 } from '@heroicons/react/24/outline'
-import { Pagination } from 'react-bootstrap'
+import { useEffect, useState } from 'react'
+import { Button, Form, InputGroup, Pagination } from 'react-bootstrap'
 
 interface DirectoryTablePaginationProps {
 	currentPage: number
@@ -40,6 +41,32 @@ function DirectoryTablePaginationComponent({
 	rangeEnd,
 	onPageChange,
 }: DirectoryTablePaginationProps) {
+	const [isJumpOpen, setIsJumpOpen] = useState(false)
+	const [jumpPageValue, setJumpPageValue] = useState(String(currentPage))
+
+	useEffect(() => {
+		setJumpPageValue(String(currentPage))
+	}, [currentPage])
+
+	useEffect(() => {
+		if (totalPages <= 1) {
+			setIsJumpOpen(false)
+		}
+	}, [totalPages])
+
+	const handleJumpSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault()
+
+		const parsedPage = Number.parseInt(jumpPageValue, 10)
+		if (!Number.isFinite(parsedPage)) {
+			return
+		}
+
+		const targetPage = Math.min(totalPages, Math.max(1, parsedPage))
+		onPageChange(targetPage)
+		setIsJumpOpen(false)
+	}
+
 	const pageWindow = getPageWindow(currentPage, totalPages)
 
 	return (
@@ -48,54 +75,91 @@ function DirectoryTablePaginationComponent({
 				{totalItems > 0 ? `Showing ${rangeStart}-${rangeEnd} of ${totalItems}` : 'No records available'}
 			</p>
 
-			<Pagination size="sm" className="table-pagination mb-0" aria-label="Directory table pagination">
-				<Pagination.Item
-					className="page-link--icon"
-					onClick={() => onPageChange(1)}
-					disabled={currentPage === 1}
-					aria-label="First page"
-				>
-					<ChevronDoubleLeftIcon className="heroicon-url" aria-hidden="true" />
-				</Pagination.Item>
-
-				<Pagination.Item
-					className="page-link--icon"
-					onClick={() => onPageChange(currentPage - 1)}
-					disabled={currentPage === 1}
-					aria-label="Previous page"
-				>
-					<ChevronLeftIcon className="heroicon-url" aria-hidden="true" />
-				</Pagination.Item>
-
-				{pageWindow.map((page) => (
+			<div className="table-pagination-actions">
+				<Pagination size="sm" className="table-pagination mb-0" aria-label="Directory table pagination">
 					<Pagination.Item
-						key={page}
-						active={page === currentPage}
-						onClick={() => onPageChange(page)}
-						aria-current={page === currentPage ? 'page' : undefined}
+						className="page-link--icon"
+						onClick={() => onPageChange(1)}
+						disabled={currentPage === 1}
+						aria-label="First page"
 					>
-						{page}
+						<ChevronDoubleLeftIcon className="u-icon" aria-hidden="true" />
 					</Pagination.Item>
-				))}
 
-				<Pagination.Item
-					className="page-link--icon"
-					onClick={() => onPageChange(currentPage + 1)}
-					disabled={currentPage === totalPages}
-					aria-label="Next page"
-				>
-					<ChevronRightIcon className="heroicon-url" aria-hidden="true" />
-				</Pagination.Item>
+					<Pagination.Item
+						className="page-link--icon"
+						onClick={() => onPageChange(currentPage - 1)}
+						disabled={currentPage === 1}
+						aria-label="Previous page"
+					>
+						<ChevronLeftIcon className="u-icon" aria-hidden="true" />
+					</Pagination.Item>
 
-				<Pagination.Item
-					className="page-link--icon"
-					onClick={() => onPageChange(totalPages)}
-					disabled={currentPage === totalPages}
-					aria-label="Last page"
-				>
-					<ChevronDoubleRightIcon className="heroicon-url" aria-hidden="true" />
-				</Pagination.Item>
-			</Pagination>
+					{pageWindow.map((page) => (
+						<Pagination.Item
+							key={page}
+							active={page === currentPage}
+							onClick={() => onPageChange(page)}
+							aria-current={page === currentPage ? 'page' : undefined}
+						>
+							{page}
+						</Pagination.Item>
+					))}
+
+					<Pagination.Item
+						className="page-link--jump"
+						onClick={() => {
+							setJumpPageValue(String(currentPage))
+							setIsJumpOpen((previous) => !previous)
+						}}
+						disabled={totalPages <= 1}
+						active={isJumpOpen}
+						aria-label="Jump to page"
+						title="Jump to page"
+					>
+						...
+					</Pagination.Item>
+
+					<Pagination.Item
+						className="page-link--icon"
+						onClick={() => onPageChange(currentPage + 1)}
+						disabled={currentPage === totalPages}
+						aria-label="Next page"
+					>
+						<ChevronRightIcon className="u-icon" aria-hidden="true" />
+					</Pagination.Item>
+
+					<Pagination.Item
+						className="page-link--icon"
+						onClick={() => onPageChange(totalPages)}
+						disabled={currentPage === totalPages}
+						aria-label="Last page"
+					>
+						<ChevronDoubleRightIcon className="u-icon" aria-hidden="true" />
+					</Pagination.Item>
+				</Pagination>
+
+				{isJumpOpen ? (
+					<Form className="table-pagination-jump" onSubmit={handleJumpSubmit}>
+						<InputGroup size="sm">
+							<Form.Control
+								type="number"
+								inputMode="numeric"
+								min={1}
+								max={totalPages}
+								value={jumpPageValue}
+								onChange={(event) => {
+									setJumpPageValue(event.currentTarget.value)
+								}}
+								aria-label="Page number"
+							/>
+							<Button type="submit" variant="outline-secondary" className="u-btn-icon">
+								Go
+							</Button>
+						</InputGroup>
+					</Form>
+				) : null}
+			</div>
 		</div>
 	)
 }

@@ -102,18 +102,18 @@ function CollegeTableComponent({
 				<div className="table-toolbar__actions" role="group" aria-label="College directory actions">
 					<Button
 						variant="primary"
-						className="d-inline-flex align-items-center gap-2"
+						className="u-btn-icon table-toolbar__icon-btn"
 						id="btn-add-college"
 						type="button"
 						data-bs-toggle="modal"
 						data-bs-target="#collegeModal"
 						data-modal-mode="add"
 					>
-						<PlusIcon className="heroicon-url" aria-hidden="true" />
+						<PlusIcon className="u-icon" aria-hidden="true" />
 					</Button>
 					<Button
 						variant="secondary"
-						className="d-inline-flex align-items-center table-toolbar__icon-btn"
+						className="u-btn-icon table-toolbar__icon-btn"
 						id="btn-refresh-college"
 						type="button"
 						aria-label="Refresh colleges"
@@ -122,7 +122,7 @@ function CollegeTableComponent({
 						}}
 						disabled={isLoading || isRefreshing}
 					>
-						<ArrowPathIcon className="heroicon-url" aria-hidden="true" />
+						<ArrowPathIcon className="u-icon" aria-hidden="true" />
 					</Button>
 				</div>
 			</div>

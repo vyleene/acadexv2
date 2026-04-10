@@ -27,12 +27,12 @@ function ProgramDirectoryCardComponent({ isActive }: ProgramDirectoryCardProps) 
         enableSorting: false,
         enableGlobalFilter: false,
         cell: (cellContext) => (
-          <div className="d-inline-flex gap-2">
+          <div className="table-action-group">
             <Button
               type="button"
               size="sm"
               variant="outline-primary"
-              className="d-inline-flex align-items-center gap-1"
+              className="u-btn-icon"
               aria-label="Edit program"
               data-bs-toggle="modal"
               data-bs-target="#programModal"
@@ -44,13 +44,13 @@ function ProgramDirectoryCardComponent({ isActive }: ProgramDirectoryCardProps) 
                 event.stopPropagation()
               }}
             >
-              <PencilSquareIcon className="heroicon-url" aria-hidden="true" />
+              <PencilSquareIcon className="u-icon" aria-hidden="true" />
             </Button>
             <Button
               type="button"
               size="sm"
               variant="outline-danger"
-              className="d-inline-flex align-items-center gap-1"
+              className="u-btn-icon"
               aria-label="Delete program"
               data-bs-toggle="modal"
               data-bs-target="#deleteProgramModal"
@@ -60,7 +60,7 @@ function ProgramDirectoryCardComponent({ isActive }: ProgramDirectoryCardProps) 
                 event.stopPropagation()
               }}
             >
-              <TrashIcon className="heroicon-url" aria-hidden="true" />
+              <TrashIcon className="u-icon" aria-hidden="true" />
             </Button>
           </div>
         ),
@@ -76,7 +76,7 @@ function ProgramDirectoryCardComponent({ isActive }: ProgramDirectoryCardProps) 
       <header className="page-header">
         <Stack direction="horizontal" className="align-items-center justify-content-between flex-wrap gap-3">
           <Stack direction="horizontal" gap={2} className="align-items-center">
-            <ClipboardDocumentIcon className="heroicon-url heroicon--lg text-primary" aria-hidden="true" />
+            <ClipboardDocumentIcon className="u-icon u-icon--lg" aria-hidden="true" />
             <h1 className="h3 mb-0">Program Directory</h1>
           </Stack>
         </Stack>

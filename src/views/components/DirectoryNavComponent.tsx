@@ -1,6 +1,6 @@
 import type { PanelKey } from '../../models/AppModel'
 import { BuildingLibraryIcon, ClipboardDocumentIcon, UserGroupIcon } from '@heroicons/react/24/outline'
-import { Image, Nav } from 'react-bootstrap'
+import { Nav } from 'react-bootstrap'
 
 interface DirectoryNavProps {
   activePanel: PanelKey
@@ -14,11 +14,6 @@ function DirectoryNavComponent({ activePanel, onSelectPanel }: DirectoryNavProps
   return (
     <Nav as="nav" className="app-nav" aria-label="Directory navigation">
       <div className="app-nav__container">
-        <div className="app-nav__logo">
-          <Image src="/img/appIcon.ico" width={48} height={48} alt="A" />
-          <span>cadex.</span>
-        </div>
-
         <Nav.Item as="div">
           <Nav.Link
             as="button"
@@ -27,7 +22,7 @@ function DirectoryNavComponent({ activePanel, onSelectPanel }: DirectoryNavProps
             data-panel="students"
             onClick={() => onSelectPanel('students')}
           >
-            <UserGroupIcon className="heroicon-url" aria-hidden="true" />
+            <UserGroupIcon className="u-icon" aria-hidden="true" />
             Student Directory
           </Nav.Link>
         </Nav.Item>
@@ -40,7 +35,7 @@ function DirectoryNavComponent({ activePanel, onSelectPanel }: DirectoryNavProps
             data-panel="programs"
             onClick={() => onSelectPanel('programs')}
           >
-            <ClipboardDocumentIcon className="heroicon-url" aria-hidden="true" />
+            <ClipboardDocumentIcon className="u-icon" aria-hidden="true" />
             Program Directory
           </Nav.Link>
         </Nav.Item>
@@ -53,7 +48,7 @@ function DirectoryNavComponent({ activePanel, onSelectPanel }: DirectoryNavProps
             data-panel="colleges"
             onClick={() => onSelectPanel('colleges')}
           >
-            <BuildingLibraryIcon className="heroicon-url" aria-hidden="true" />
+            <BuildingLibraryIcon className="u-icon" aria-hidden="true" />
             College Directory
           </Nav.Link>
         </Nav.Item>

@@ -12,8 +12,9 @@ function InfoStudentModalComponent() {
     >
       <Modal.Dialog centered>
         <Modal.Header>
-          <Modal.Title id="studentInfoModalLabel">
-              Student Information
+          <Modal.Title className="modal-title--main" id="studentInfoModalLabel">
+            <IdentificationIcon className="u-icon" aria-hidden="true" />
+            <span className="u-modal-title-text">Student Information</span>
           </Modal.Title>
           <CloseButton data-bs-dismiss="modal" aria-label="Close" />
         </Modal.Header>
@@ -22,7 +23,7 @@ function InfoStudentModalComponent() {
               <div className="student-info__header">
                 <div>
                   <div className="student-info__label">
-                    <IdentificationIcon className="heroicon-url" aria-hidden="true" />
+                    <IdentificationIcon className="u-icon" aria-hidden="true" />
                     Student ID
                   </div>
                   <div className="student-info__value" id="student-info-id"></div>
@@ -30,7 +31,7 @@ function InfoStudentModalComponent() {
 
                 <div>
                   <div className="student-info__label">
-                    <UserIcon className="heroicon-url" aria-hidden="true" />
+                    <UserIcon className="u-icon" aria-hidden="true" />
                     Name
                   </div>
                   <div className="student-info__value" id="student-info-name"></div>
@@ -40,14 +41,14 @@ function InfoStudentModalComponent() {
               <div className="student-info__meta mt-3">
                 <div className="student-info__meta-item">
                   <div className="student-info__label">
-                    <UsersIcon className="heroicon-url" aria-hidden="true" />
+                    <UsersIcon className="u-icon" aria-hidden="true" />
                     Gender
                   </div>
                   <div className="student-info__value student-info__chip" id="student-info-gender"></div>
                 </div>
                 <div className="student-info__meta-item">
                   <div className="student-info__label">
-                    <CalendarDaysIcon className="heroicon-url" aria-hidden="true" />
+                    <CalendarDaysIcon className="u-icon" aria-hidden="true" />
                     Year Level
                   </div>
                   <div className="student-info__value student-info__chip" id="student-info-year"></div>
@@ -57,7 +58,7 @@ function InfoStudentModalComponent() {
               <div className="row g-3 mt-2">
                 <div className="col-12">
                   <div className="student-info__label">
-                    <AcademicCapIcon className="heroicon-url" aria-hidden="true" />
+                    <AcademicCapIcon className="u-icon" aria-hidden="true" />
                     Program
                   </div>
                   <div className="student-info__inline">
@@ -71,7 +72,7 @@ function InfoStudentModalComponent() {
 
                 <div className="col-12">
                   <div className="student-info__label">
-                    <BuildingLibraryIcon className="heroicon-url" aria-hidden="true" />
+                    <BuildingLibraryIcon className="u-icon" aria-hidden="true" />
                     College
                   </div>
                   <div className="student-info__inline">

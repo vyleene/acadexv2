@@ -191,14 +191,14 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
     }
 
     const modalElement = document.getElementById('programModal')
-    const titleElement = document.getElementById('programModalLabel')
+    const titleTextElement = document.getElementById('programModalTitleText')
     const submitButton = document.getElementById('program-submit') as HTMLButtonElement | null
     const form = document.getElementById('program-form') as HTMLFormElement | null
     const codeInput = document.getElementById('program-code') as HTMLInputElement | null
     const nameInput = document.getElementById('program-name') as HTMLInputElement | null
     const collegeSelect = document.getElementById('program-college') as HTMLSelectElement | null
 
-    if (!modalElement || !titleElement || !submitButton || !form) {
+    if (!modalElement || !titleTextElement || !submitButton || !form) {
       return
     }
 
@@ -225,7 +225,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
       if (mode === 'add') {
         form.dataset.mode = 'add'
         form.dataset.programCode = ''
-        titleElement.textContent = 'Add Program'
+        titleTextElement.textContent = 'Add Program'
         submitButton.textContent = 'Add Program'
 
         if (codeInput) {
@@ -247,7 +247,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
 
       form.dataset.mode = 'edit'
       form.dataset.programCode = ''
-      titleElement.textContent = 'Edit Program'
+      titleTextElement.textContent = 'Edit Program'
       submitButton.textContent = 'Save Changes'
 
       const programCode = normalizeProgramCode(trigger?.dataset.programCode)

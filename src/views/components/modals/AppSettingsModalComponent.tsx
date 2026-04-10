@@ -1,4 +1,10 @@
-import { ArrowRightOnRectangleIcon, Cog6ToothIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline'
+import {
+	ArrowRightOnRectangleIcon,
+	CircleStackIcon,
+	Cog6ToothIcon,
+	MoonIcon,
+	SunIcon,
+} from '@heroicons/react/24/outline'
 import { Button, CloseButton, Col, Form, Modal, Row, Stack } from 'react-bootstrap'
 import type { LoginFormValues, ThemeMode } from '../../../models/AppModel'
 
@@ -50,83 +56,109 @@ function AppSettingsModalComponent({
 			aria-labelledby="appSettingsModalLabel"
 			aria-hidden="true"
 		>
-			<Modal.Dialog centered>
-				<Modal.Header>
-					<Modal.Title className="d-flex align-items-center gap-2" id="appSettingsModalLabel">
-						<Cog6ToothIcon className="heroicon-url" aria-hidden="true" />
-						App Settings
+			<Modal.Dialog centered className="app-settings-modal">
+				<Modal.Header className="settings-modal__header">
+					<Modal.Title className="modal-title--main" id="appSettingsModalLabel">
+						<Cog6ToothIcon className="u-icon" aria-hidden="true" />
+						<span className="u-modal-title-text">Settings</span>
 					</Modal.Title>
 					<CloseButton data-bs-dismiss="modal" aria-label="Close" />
 				</Modal.Header>
-				<Modal.Body>
+				<Modal.Body className="settings-modal__body">
 					<Stack gap={3}>
-						<section>
-							<Form.Label className="mb-2">Theme</Form.Label>
+						<section className="settings-panel">
+							<div className="settings-panel__head">
+								<h3 className="settings-panel__title mb-0">Theme</h3>
+								<div className="settings-theme-legend">
+									<span className={`settings-theme-pill${theme === 'dark' ? ' is-current' : ''}`}>
+										<MoonIcon className="u-icon" aria-hidden="true" />
+										Dark
+									</span>
+									<span className={`settings-theme-pill${theme === 'light' ? ' is-current' : ''}`}>
+										<SunIcon className="u-icon" aria-hidden="true" />
+										Light
+									</span>
+								</div>
+							</div>
+
 							<Form.Check
 								type="switch"
 								id="settings-theme-switch"
+								className="settings-theme-switch"
 								label={theme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled'}
 								checked={theme === 'dark'}
 								onChange={onToggleTheme}
 							/>
-							<div className="d-flex align-items-center gap-2 mt-2 text-muted">
-								<MoonIcon className="heroicon-url" aria-hidden="true" />
-								<span>Dark</span>
-								<SunIcon className="heroicon-url" aria-hidden="true" />
-								<span>Light</span>
-							</div>
 						</section>
 
-						<section>
-							<Form.Label className="mb-2">MySQL Credentials</Form.Label>
+						<section className="settings-panel">
+							<div className="settings-panel__head">
+								<div className="settings-panel__title-wrap">
+									<CircleStackIcon className="u-icon settings-panel__title-icon" aria-hidden="true" />
+									<h3 className="settings-panel__title mb-0">MySQL Credentials</h3>
+								</div>
+							</div>
+
 							<Row className="g-3">
 								<Col md={8}>
-									<Form.Group controlId="settings-mysql-host">
+									<Form.Group className="settings-field" controlId="settings-mysql-host">
 										<Form.Label>Host</Form.Label>
-										<Form.Control readOnly value={credentials.host || 'Not set'} />
+										<Form.Control
+											className="settings-readonly"
+											readOnly
+											value={credentials.host || 'Not set'}
+										/>
 									</Form.Group>
 								</Col>
 								<Col md={4}>
-									<Form.Group controlId="settings-mysql-port">
+									<Form.Group className="settings-field" controlId="settings-mysql-port">
 										<Form.Label>Port</Form.Label>
-										<Form.Control readOnly value={credentials.port || 'Not set'} />
+										<Form.Control
+											className="settings-readonly"
+											readOnly
+											value={credentials.port || 'Not set'}
+										/>
 									</Form.Group>
 								</Col>
 								<Col md={12}>
-									<Form.Group controlId="settings-mysql-database">
+									<Form.Group className="settings-field" controlId="settings-mysql-database">
 										<Form.Label>Database</Form.Label>
-										<Form.Control readOnly value={credentials.database || 'Not set'} />
+										<Form.Control
+											className="settings-readonly"
+											readOnly
+											value={credentials.database || 'Not set'}
+										/>
 									</Form.Group>
 								</Col>
 								<Col md={6}>
-									<Form.Group controlId="settings-mysql-username">
+									<Form.Group className="settings-field" controlId="settings-mysql-username">
 										<Form.Label>Username</Form.Label>
-										<Form.Control readOnly value={maskedUsername} />
+										<Form.Control className="settings-readonly" readOnly value={maskedUsername} />
 									</Form.Group>
 								</Col>
 								<Col md={6}>
-									<Form.Group controlId="settings-mysql-password">
+									<Form.Group className="settings-field" controlId="settings-mysql-password">
 										<Form.Label>Password</Form.Label>
-										<Form.Control readOnly value={maskedPassword} />
+										<Form.Control className="settings-readonly" readOnly value={maskedPassword} />
 									</Form.Group>
 								</Col>
 							</Row>
 						</section>
 					</Stack>
 				</Modal.Body>
-				<Modal.Footer className="justify-content-between">
-					<Button variant="outline-secondary" type="button" data-bs-dismiss="modal">
+				<Modal.Footer className="justify-content-between settings-modal__footer">
+					<Button variant="secondary" type="button" data-bs-dismiss="modal">
 						Close
 					</Button>
 					<Button
-						variant="outline-danger"
+						variant="danger"
 						type="button"
 						disabled={!isConnected || isDisconnecting}
 						aria-busy={isDisconnecting}
 						data-bs-dismiss="modal"
 						onClick={onDisconnect}
 					>
-						<ArrowRightOnRectangleIcon className="heroicon-url me-1" aria-hidden="true" />
+						<ArrowRightOnRectangleIcon className="u-icon me-1" aria-hidden="true" />
 						{isDisconnecting ? 'Disconnecting...' : 'Disconnect MySQL'}
 					</Button>
 				</Modal.Footer>

@@ -229,7 +229,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
     }
 
     const modalElement = document.getElementById('studentModal')
-    const titleElement = document.getElementById('studentModalLabel')
+    const titleTextElement = document.getElementById('studentModalTitleText')
     const submitButton = document.getElementById('student-submit') as HTMLButtonElement | null
     const form = document.getElementById('student-form') as HTMLFormElement | null
     const idYearSelect = document.getElementById('student-id-year') as HTMLSelectElement | null
@@ -240,7 +240,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
     const yearSelect = document.getElementById('student-year') as HTMLSelectElement | null
     const genderSelect = document.getElementById('student-gender') as HTMLSelectElement | null
 
-    if (!modalElement || !titleElement || !submitButton || !form) {
+    if (!modalElement || !titleTextElement || !submitButton || !form) {
       return
     }
 
@@ -268,7 +268,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       if (mode === 'add') {
         form.dataset.mode = 'add'
         form.dataset.studentId = ''
-        titleElement.textContent = 'Add Student'
+        titleTextElement.textContent = 'Add Student'
         submitButton.textContent = 'Add Student'
 
         if (idYearSelect) {
@@ -305,7 +305,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
 
       form.dataset.mode = 'edit'
       form.dataset.studentId = ''
-      titleElement.textContent = 'Edit Student'
+      titleTextElement.textContent = 'Edit Student'
       submitButton.textContent = 'Save Changes'
 
       const studentIdRaw = trigger?.dataset.studentId ?? ''

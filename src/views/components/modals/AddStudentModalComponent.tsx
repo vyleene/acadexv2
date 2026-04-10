@@ -6,23 +6,21 @@ function AddStudentModalComponent() {
     <div className="modal fade" id="studentModal" tabIndex={-1} aria-labelledby="studentModalLabel" aria-hidden="true">
       <Modal.Dialog centered>
         <Modal.Header>
-          <Modal.Title className="d-flex align-items-center gap-2" id="studentModalLabel">
-              <UserPlusIcon className="heroicon-url" aria-hidden="true" />
-              Add Student
+          <Modal.Title className="modal-title--main" id="studentModalLabel">
+            <UserPlusIcon className="u-icon" aria-hidden="true" />
+            <span id="studentModalTitleText" className="u-modal-title-text">Add Student</span>
           </Modal.Title>
           <CloseButton data-bs-dismiss="modal" aria-label="Close" />
         </Modal.Header>
         <Form id="student-form" data-mode="add">
           <Modal.Body>
             <Form.Group className="mb-3" controlId="student-id-number">
-              <Form.Label>
-                  Student ID
-              </Form.Label>
+              <Form.Label>Student ID</Form.Label>
               <Row className="g-2 align-items-center">
                 <Col xs={4} md={4}>
                   <InputGroup>
                     <InputGroup.Text>
-                      <IdentificationIcon className="heroicon-url" aria-hidden="true" />
+                      <IdentificationIcon className="u-icon" aria-hidden="true" />
                     </InputGroup.Text>
                     <Form.Select id="student-id-year" name="studentIdYear" required defaultValue="">
                       <option value="" hidden>
@@ -36,15 +34,15 @@ function AddStudentModalComponent() {
                 </Col>
                 <Col xs={7} md={7}>
                   <Form.Control
-                      id="student-id-number"
-                      name="studentIdNumber"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      pattern="[0-9]{4}"
-                      placeholder="NNNN"
-                      required
-                    />
+                    id="student-id-number"
+                    name="studentIdNumber"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    pattern="[0-9]{4}"
+                    placeholder="NNNN"
+                    required
+                  />
                 </Col>
               </Row>
             </Form.Group>
@@ -57,7 +55,7 @@ function AddStudentModalComponent() {
                   </Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <UserIcon className="heroicon-url" aria-hidden="true" />
+                      <UserIcon className="u-icon" aria-hidden="true" />
                     </InputGroup.Text>
                     <Form.Control
                       id="student-first-name"
@@ -79,7 +77,7 @@ function AddStudentModalComponent() {
                   </Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <UserIcon className="heroicon-url" aria-hidden="true" />
+                      <UserIcon className="u-icon" aria-hidden="true" />
                     </InputGroup.Text>
                     <Form.Control
                       id="student-last-name"
@@ -96,12 +94,10 @@ function AddStudentModalComponent() {
             </Row>
 
             <Form.Group className="mt-3" controlId="student-program">
-              <Form.Label>
-                  Program Code
-              </Form.Label>
+              <Form.Label>Program Code</Form.Label>
               <InputGroup>
                 <InputGroup.Text>
-                    <AcademicCapIcon className="heroicon-url" aria-hidden="true" />
+                  <AcademicCapIcon className="u-icon" aria-hidden="true" />
                 </InputGroup.Text>
                 <Form.Select id="student-program" name="programCode" required defaultValue="">
                   <option value="" hidden>
@@ -119,7 +115,7 @@ function AddStudentModalComponent() {
                   </Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <CalendarDaysIcon className="heroicon-url" aria-hidden="true" />
+                      <CalendarDaysIcon className="u-icon" aria-hidden="true" />
                     </InputGroup.Text>
                     <Form.Select id="student-year" name="year" required defaultValue="">
                       <option value="" hidden>
@@ -141,7 +137,7 @@ function AddStudentModalComponent() {
                   </Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <UsersIcon className="heroicon-url" aria-hidden="true" />
+                      <UsersIcon className="u-icon" aria-hidden="true" />
                     </InputGroup.Text>
                     <Form.Select id="student-gender" name="gender" required defaultValue="">
                       <option value="" hidden>
@@ -158,10 +154,10 @@ function AddStudentModalComponent() {
 
           <Modal.Footer>
             <Button type="button" variant="danger" data-bs-dismiss="modal">
-                Cancel
+              Cancel
             </Button>
             <Button type="submit" variant="success" id="student-submit">
-                Add Student
+              Add Student
             </Button>
           </Modal.Footer>
         </Form>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { AcademicCapIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PencilSquareIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { Button, Stack } from 'react-bootstrap'
 import { type ColumnDef } from '@tanstack/react-table'
 import AddStudentModalComponent from '../modals/AddStudentModalComponent'
@@ -47,12 +47,12 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
         enableSorting: false,
         enableGlobalFilter: false,
         cell: (cellContext) => (
-          <div className="d-inline-flex gap-2">
+          <div className="table-action-group">
             <Button
               type="button"
               size="sm"
               variant="outline-primary"
-              className="d-inline-flex align-items-center gap-1"
+              className="u-btn-icon"
               aria-label="Edit student"
               data-bs-toggle="modal"
               data-bs-target="#studentModal"
@@ -67,13 +67,13 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
                 event.stopPropagation()
               }}
             >
-              <PencilSquareIcon className="heroicon-url" aria-hidden="true" />
+              <PencilSquareIcon className="u-icon" aria-hidden="true" />
             </Button>
             <Button
               type="button"
               size="sm"
               variant="outline-danger"
-              className="d-inline-flex align-items-center gap-1"
+              className="u-btn-icon"
               aria-label="Delete student"
               data-bs-toggle="modal"
               data-bs-target="#deleteStudentModal"
@@ -84,7 +84,7 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
                 event.stopPropagation()
               }}
             >
-              <TrashIcon className="heroicon-url" aria-hidden="true" />
+              <TrashIcon className="u-icon" aria-hidden="true" />
             </Button>
           </div>
         ),
@@ -100,7 +100,7 @@ function StudentDirectoryCardComponent({ isActive }: StudentDirectoryCardProps) 
       <header className="page-header">
         <Stack direction="horizontal" className="align-items-center justify-content-between flex-wrap gap-3">
           <Stack direction="horizontal" gap={2} className="align-items-center">
-            <AcademicCapIcon className="heroicon-url heroicon--lg text-primary" aria-hidden="true" />
+            <UserGroupIcon className="u-icon u-icon--lg" aria-hidden="true" />
             <h1 className="h3 mb-0" id="test">
               Student Directory
             </h1>

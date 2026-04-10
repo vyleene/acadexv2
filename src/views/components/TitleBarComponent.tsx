@@ -11,8 +11,8 @@ function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
     <header className="app-titlebar" id="app-titlebar">
       <div className="app-titlebar__drag-area" data-tauri-drag-region>
         <div className="app-titlebar__brand">
-          <span className="app-titlebar__dot"></span>
-          <span className="app-titlebar__title">Acadex</span>
+          <img src="/img/appIcon.ico" alt="Acadex logo" className="app-titlebar__logo" draggable={false} />
+          <span className="app-titlebar__title">cadex</span>
         </div>
       </div>
       <Stack direction="horizontal" gap={2} className="app-titlebar__actions">
@@ -25,7 +25,7 @@ function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
           data-bs-toggle="modal"
           data-bs-target="#appSettingsModal"
         >
-          <Cog6ToothIcon className="heroicon-url titlebar-icon" aria-hidden="true" />
+          <Cog6ToothIcon className="u-icon u-titlebar-icon" aria-hidden="true" />
         </Button>
         <Button
           variant="link"
@@ -35,7 +35,7 @@ function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
           type="button"
           onClick={onMinimizeWindow}
         >
-          <MinusIcon className="heroicon-url titlebar-icon" aria-hidden="true" />
+          <MinusIcon className="u-icon u-titlebar-icon" aria-hidden="true" />
         </Button>
         <Button
           variant="link"
@@ -45,7 +45,7 @@ function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
           type="button"
           onClick={onCloseWindow}
         >
-          <XMarkIcon className="heroicon-url titlebar-icon" aria-hidden="true" />
+          <XMarkIcon className="u-icon u-titlebar-icon" aria-hidden="true" />
         </Button>
       </Stack>
     </header>

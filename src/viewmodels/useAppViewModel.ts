@@ -402,11 +402,6 @@ export function useAppViewModel(): AppViewProps {
     try {
       await invoke('disconnect_mysql_database')
       goToLoginStage()
-      pushToast({
-        type: 'success',
-        title: 'MySQL disconnected',
-        message: 'The database connection has been closed.',
-      })
     } catch (error) {
       const message = getErrorMessage(error)
       pushToast({
