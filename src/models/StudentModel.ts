@@ -6,6 +6,7 @@ export type StudentRow = {
   firstName: string
   lastName: string
   programCode: string
+  programName: string
   year: string
   gender: string
   collegeCode: string

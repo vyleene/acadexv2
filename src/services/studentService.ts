@@ -17,6 +17,7 @@ type BackendCollege = {
 
 type BackendProgram = {
   code: string
+  name: string
   college_code: string
 }
 
@@ -33,6 +34,7 @@ function mapStudentRow(student: BackendStudent): StudentRow {
     firstName: student.firstname,
     lastName: student.lastname,
     programCode: student.program_code || 'N/A',
+    programName: 'N/A',
     year: student.year,
     gender: student.gender,
     collegeCode: 'N/A',
@@ -54,9 +56,12 @@ export async function fetchStudentRows(): Promise<StudentRow[]> {
     collegesByCode.set(college.code, college.name)
   }
 
-  const collegesByProgram = new Map<string, string>()
+  const programsByCode = new Map<string, { programName: string; collegeCode: string }>()
   for (const program of programsResponse) {
-    collegesByProgram.set(program.code, program.college_code)
+    programsByCode.set(program.code, {
+      programName: program.name,
+      collegeCode: program.college_code,
+    })
   }
 
   return studentsResponse.map((student) => {
@@ -65,16 +70,20 @@ export async function fetchStudentRows(): Promise<StudentRow[]> {
       return row
     }
 
-    const collegeCode = collegesByProgram.get(row.programCode)
+    const program = programsByCode.get(row.programCode)
 
-    if (!collegeCode) {
+    if (!program) {
       return row
     }
 
+    const collegeCode = program.collegeCode
+    const collegeName = collegeCode ? collegesByCode.get(collegeCode) ?? 'N/A' : 'N/A'
+
     return {
       ...row,
-      collegeCode,
-      collegeName: collegesByCode.get(collegeCode) ?? 'N/A',
+      programName: program.programName || 'N/A',
+      collegeCode: collegeCode || 'N/A',
+      collegeName,
     }
   })
 }

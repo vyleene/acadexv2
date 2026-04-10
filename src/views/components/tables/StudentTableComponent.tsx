@@ -182,7 +182,7 @@ function StudentTableComponent({
 								data-student-gender={row.original.gender}
 								data-student-year={row.original.year}
 								data-student-program-code={row.original.programCode}
-								data-student-program-name={row.original.programCode}
+								data-student-program-name={row.original.programName}
 								data-student-college-code={row.original.collegeCode}
 								data-student-college-name={row.original.collegeName}
 							>
