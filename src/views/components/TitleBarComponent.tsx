@@ -7,8 +7,18 @@ interface TitleBarProps {
 }
 
 function TitleBarComponent({ onMinimizeWindow, onCloseWindow }: TitleBarProps) {
+  const handleTitleBarDoubleClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
   return (
-    <header className="app-titlebar" id="app-titlebar" data-tauri-drag-region>
+    <header
+      className="app-titlebar"
+      id="app-titlebar"
+      data-tauri-drag-region
+      onDoubleClick={handleTitleBarDoubleClick}
+    >
       <div className="app-titlebar__drag-area">
         <div className="app-titlebar__brand">
           <img src="/img/appIcon.ico" alt="Acadex logo" className="app-titlebar__logo" draggable={false} />

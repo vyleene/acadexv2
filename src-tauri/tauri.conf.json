@@ -16,7 +16,9 @@
         "width": 1200,
         "height": 855,
         "decorations": false,
-        "visible": false
+        "visible": false,
+        "resizable": false,
+        "maximizable": false
       }
     ],
     "security": {
