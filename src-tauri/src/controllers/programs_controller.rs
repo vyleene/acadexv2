@@ -1,9 +1,7 @@
 use tauri::State;
 
-use crate::models::{
-    datatabase_model::DatabaseModel,
-    programs_model::{CreateProgramPayload, Program, UpdateProgramPayload},
-};
+use crate::db::model::DatabaseModel;
+use crate::models::programs_model::{CreateProgramPayload, Program, UpdateProgramPayload};
 use crate::services::programs_service::ProgramsService;
 
 #[tauri::command]

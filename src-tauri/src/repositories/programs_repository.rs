@@ -1,4 +1,4 @@
-use crate::models::datatabase_model::DatabaseModel;
+use crate::db::model::DatabaseModel;
 use crate::models::programs_model::{CreateProgramPayload, Program, UpdateProgramPayload};
 
 pub struct ProgramsRepository;

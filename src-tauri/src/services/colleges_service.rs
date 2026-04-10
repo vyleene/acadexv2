@@ -1,5 +1,5 @@
+use crate::db::model::DatabaseModel;
 use crate::models::colleges_model::{College, CreateCollegePayload, UpdateCollegePayload};
-use crate::models::datatabase_model::DatabaseModel;
 use crate::repositories::colleges_repository::CollegesRepository;
 
 pub struct CollegesService;

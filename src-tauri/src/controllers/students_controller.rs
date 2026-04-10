@@ -1,9 +1,7 @@
 use tauri::State;
 
-use crate::models::{
-    datatabase_model::DatabaseModel,
-    students_model::{CreateStudentPayload, Student, UpdateStudentPayload},
-};
+use crate::db::model::DatabaseModel;
+use crate::models::students_model::{CreateStudentPayload, Student, UpdateStudentPayload};
 use crate::services::students_service::StudentsService;
 
 #[tauri::command]

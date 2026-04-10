@@ -1,11 +1,12 @@
 mod controllers;
+mod db;
 mod models;
 mod repositories;
 mod services;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let database_model = models::datatabase_model::DatabaseModel::new();
+    let database_model = db::model::DatabaseModel::new();
     tauri::async_runtime::block_on(async {
         if let Err(error) = database_model.configure_placeholder().await {
             eprintln!("Failed to configure placeholder MySQL connection: {}", error);
@@ -17,11 +18,11 @@ pub fn run() {
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            controllers::database_controller::initialize_mysql_schema,
-            controllers::database_controller::configure_mysql_database,
-            controllers::database_controller::get_mysql_database_status,
-            controllers::database_controller::test_mysql_database_connection,
-            controllers::database_controller::disconnect_mysql_database,
+            db::controller::initialize_mysql_schema,
+            db::controller::configure_mysql_database,
+            db::controller::get_mysql_database_status,
+            db::controller::test_mysql_database_connection,
+            db::controller::disconnect_mysql_database,
             controllers::colleges_controller::create_college,
             controllers::colleges_controller::read_college,
             controllers::colleges_controller::update_college,
