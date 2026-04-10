@@ -20,7 +20,11 @@ A lightweight desktop application for managing academic directory records — St
 
 <div align="center">
 
-![App Demo](docs/demo.png)
+<picture>
+  <source srcset="docs/demo_dark.png" media="(prefers-color-scheme: dark)">
+  <source srcset="docs/demo_light.png" media="(prefers-color-scheme: light)">
+  <img src="docs/demo_light.png" alt="Acadex app demo">
+</picture>
 
 </div>
 
