@@ -1,4 +1,4 @@
-use crate::db::model::DatabaseModel;
+use crate::models::database_model::DatabaseModel;
 use crate::models::students_model::{CreateStudentPayload, Student, UpdateStudentPayload};
 use crate::repositories::students_repository::StudentsRepository;
 

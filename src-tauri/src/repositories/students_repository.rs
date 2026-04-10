@@ -1,7 +1,7 @@
-use crate::db::model::DatabaseModel;
 use crate::models::students_model::{
     CreateStudentPayload, Student, UpdateStudentPayload,
 };
+use crate::models::database_model::DatabaseModel;
 
 pub struct StudentsRepository;
 
@@ -91,7 +91,7 @@ impl StudentsRepository {
         .map_err(|error| database_error("Failed to update student", error))?;
 
         if update_result.rows_affected() == 0 {
-            return Err(format!("Student with id '{}' was not found.", id));
+            return Err(not_found_error("Student", "id", id));
         }
 
         Ok(Student {
@@ -156,6 +156,14 @@ fn normalize_name(value: &str, field_name: &str, max_length: usize) -> Result<St
     Ok(normalized.to_string())
 }
 
+fn not_found_error(entity: &str, field_name: &str, value: impl std::fmt::Display) -> String {
+    format!("{} with {} '{}' was not found.", entity, field_name, value)
+}
+
+fn database_error(context: &str, error: sqlx::Error) -> String {
+    format!("{}: {}", context, error)
+}
+
 fn normalize_student_id(id: i32) -> Result<i32, String> {
     if id <= 0 {
         return Err("student id must be a positive integer.".to_string());
@@ -180,8 +188,4 @@ fn normalize_gender(gender: &str) -> Result<String, String> {
         "M" | "F" => Ok(normalized),
         _ => Err("student gender must be either M or F.".to_string()),
     }
-}
-
-fn database_error(context: &str, error: sqlx::Error) -> String {
-    format!("{}: {}", context, error)
 }

@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::db::model::{DatabaseConfigPayload, DatabaseModel, DatabaseStatus};
+use crate::models::database_model::{DatabaseConfigPayload, DatabaseModel, DatabaseStatus};
 
 #[tauri::command]
 pub async fn initialize_mysql_schema(database: State<'_, DatabaseModel>) -> Result<(), String> {

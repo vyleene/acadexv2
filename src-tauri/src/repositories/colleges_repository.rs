@@ -1,5 +1,5 @@
-use crate::db::model::DatabaseModel;
 use crate::models::colleges_model::{College, CreateCollegePayload, UpdateCollegePayload};
+use crate::models::database_model::DatabaseModel;
 
 pub struct CollegesRepository;
 
@@ -50,7 +50,7 @@ impl CollegesRepository {
             .map_err(|error| database_error("Failed to update college", error))?;
 
         if update_result.rows_affected() == 0 {
-            return Err(format!("College with code '{}' was not found.", code));
+            return Err(not_found_error("College", "code", &code));
         }
 
         Ok(College { code, name })
@@ -95,6 +95,10 @@ fn normalize_name(value: &str, field_name: &str, max_length: usize) -> Result<St
     }
 
     Ok(normalized.to_string())
+}
+
+fn not_found_error(entity: &str, field_name: &str, value: impl std::fmt::Display) -> String {
+    format!("{} with {} '{}' was not found.", entity, field_name, value)
 }
 
 fn database_error(context: &str, error: sqlx::Error) -> String {

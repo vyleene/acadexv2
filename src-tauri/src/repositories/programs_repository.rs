@@ -1,5 +1,5 @@
-use crate::db::model::DatabaseModel;
 use crate::models::programs_model::{CreateProgramPayload, Program, UpdateProgramPayload};
+use crate::models::database_model::DatabaseModel;
 
 pub struct ProgramsRepository;
 
@@ -61,7 +61,7 @@ impl ProgramsRepository {
             .map_err(|error| database_error("Failed to update program", error))?;
 
         if update_result.rows_affected() == 0 {
-            return Err(format!("Program with code '{}' was not found.", code));
+            return Err(not_found_error("Program", "code", &code));
         }
 
         Ok(Program {
@@ -111,6 +111,10 @@ fn normalize_name(value: &str, field_name: &str, max_length: usize) -> Result<St
     }
 
     Ok(normalized.to_string())
+}
+
+fn not_found_error(entity: &str, field_name: &str, value: impl std::fmt::Display) -> String {
+    format!("{} with {} '{}' was not found.", entity, field_name, value)
 }
 
 fn database_error(context: &str, error: sqlx::Error) -> String {

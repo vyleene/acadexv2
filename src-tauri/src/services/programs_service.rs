@@ -1,4 +1,4 @@
-use crate::db::model::DatabaseModel;
+use crate::models::database_model::DatabaseModel;
 use crate::models::programs_model::{CreateProgramPayload, Program, UpdateProgramPayload};
 use crate::repositories::programs_repository::ProgramsRepository;
 

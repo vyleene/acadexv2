@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::db::model::DatabaseModel;
+use crate::models::database_model::DatabaseModel;
 use crate::models::colleges_model::{College, CreateCollegePayload, UpdateCollegePayload};
 use crate::services::colleges_service::CollegesService;
 

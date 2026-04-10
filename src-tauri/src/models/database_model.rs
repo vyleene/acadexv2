@@ -1,5 +1,8 @@
-use sqlx::{MySql, MySqlPool, QueryBuilder};
+use serde::{Deserialize, Serialize};
+use sqlx::{mysql::MySqlPoolOptions, MySql, MySqlPool, QueryBuilder};
+use std::sync::RwLock;
 
+const DEFAULT_MAX_CONNECTIONS: u32 = 10;
 const MIN_STUDENT_SEED_COUNT: i64 = 5000;
 const STUDENT_SEED_BATCH_SIZE: i64 = 500;
 const STUDENT_SEED_START_ID: i32 = 20240000;
@@ -212,7 +215,206 @@ const SCHEMA_MIGRATION_SQL: &[&str] = &[
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"#,
 ];
 
-pub(super) async fn run_schema_migrations(pool: &MySqlPool) -> Result<(), String> {
+#[derive(Debug, Clone, Deserialize)]
+pub struct DatabaseConfigPayload {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub username: String,
+    pub password: String,
+    pub max_connections: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DatabaseStatus {
+    pub configured: bool,
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub database: Option<String>,
+    pub username: Option<String>,
+    pub max_connections: Option<u32>,
+}
+
+#[derive(Debug)]
+struct DatabaseState {
+    config: Option<DatabaseConfig>,
+    pool: Option<MySqlPool>,
+}
+
+#[derive(Debug)]
+pub struct DatabaseModel {
+    state: RwLock<DatabaseState>,
+}
+
+#[derive(Debug, Clone)]
+struct DatabaseConfig {
+    host: String,
+    port: u16,
+    database: String,
+    username: String,
+    password: String,
+    max_connections: u32,
+}
+
+impl DatabaseModel {
+    pub fn new() -> Self {
+        Self {
+            state: RwLock::new(DatabaseState {
+                config: None,
+                pool: None,
+            }),
+        }
+    }
+
+    pub async fn configure(&self, payload: DatabaseConfigPayload) -> Result<DatabaseStatus, String> {
+        let config = DatabaseConfig::from_payload(payload)?;
+        self.configure_with(config).await
+    }
+
+    pub async fn test_connection(payload: DatabaseConfigPayload) -> Result<(), String> {
+        let mut config = DatabaseConfig::from_payload(payload)?;
+        config.max_connections = 1;
+        let pool = Self::connect(&config).await?;
+        pool.close().await;
+        Ok(())
+    }
+
+    pub fn status(&self) -> Result<DatabaseStatus, String> {
+        let state = self
+            .state
+            .read()
+            .map_err(|_| "Database state lock is unavailable.".to_string())?;
+
+        match &state.config {
+            Some(config) => Ok(config.to_status(state.pool.is_some())),
+            None => Ok(DatabaseStatus {
+                configured: false,
+                host: None,
+                port: None,
+                database: None,
+                username: None,
+                max_connections: None,
+            }),
+        }
+    }
+
+    pub fn pool(&self) -> Result<MySqlPool, String> {
+        let state = self
+            .state
+            .read()
+            .map_err(|_| "Database state lock is unavailable.".to_string())?;
+
+        state
+            .pool
+            .clone()
+            .ok_or_else(|| "MySQL database is not configured.".to_string())
+    }
+
+    pub async fn disconnect(&self) -> Result<(), String> {
+        let pool = {
+            let mut state = self
+                .state
+                .write()
+                .map_err(|_| "Database state lock is unavailable.".to_string())?;
+            state.config = None;
+            state.pool.take()
+        };
+
+        if let Some(pool) = pool {
+            pool.close().await;
+        }
+
+        Ok(())
+    }
+
+    pub async fn initialize_schema(&self) -> Result<(), String> {
+        let pool = self.pool()?;
+        run_schema_migrations(&pool).await?;
+        seed_initial_data(&pool).await?;
+        Ok(())
+    }
+
+    async fn configure_with(&self, config: DatabaseConfig) -> Result<DatabaseStatus, String> {
+        let pool = Self::connect(&config).await?;
+        let mut state = self
+            .state
+            .write()
+            .map_err(|_| "Database state lock is unavailable.".to_string())?;
+        state.pool = Some(pool);
+        state.config = Some(config.clone());
+        Ok(config.to_status(true))
+    }
+
+    async fn connect(config: &DatabaseConfig) -> Result<MySqlPool, String> {
+        MySqlPoolOptions::new()
+            .max_connections(config.max_connections)
+            .connect(&config.to_url())
+            .await
+            .map_err(|error| format!("Failed to connect to MySQL: {}", error))
+    }
+}
+
+impl DatabaseConfig {
+    fn from_payload(payload: DatabaseConfigPayload) -> Result<Self, String> {
+        let host = normalize_required(&payload.host, "host")?;
+        let database = normalize_required(&payload.database, "database")?;
+        let username = normalize_required(&payload.username, "username")?;
+        let max_connections = normalize_max_connections(payload.max_connections)?;
+
+        if payload.port == 0 {
+            return Err("port must be greater than 0.".to_string());
+        }
+
+        Ok(Self {
+            host,
+            port: payload.port,
+            database,
+            username,
+            password: payload.password,
+            max_connections,
+        })
+    }
+
+    fn to_url(&self) -> String {
+        format!(
+            "mysql://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database
+        )
+    }
+
+    fn to_status(&self, configured: bool) -> DatabaseStatus {
+        DatabaseStatus {
+            configured,
+            host: Some(self.host.clone()),
+            port: Some(self.port),
+            database: Some(self.database.clone()),
+            username: Some(self.username.clone()),
+            max_connections: Some(self.max_connections),
+        }
+    }
+}
+
+fn normalize_required(value: &str, field_name: &str) -> Result<String, String> {
+    let normalized = value.trim();
+
+    if normalized.is_empty() {
+        return Err(format!("{} is required.", field_name));
+    }
+
+    Ok(normalized.to_string())
+}
+
+fn normalize_max_connections(value: Option<u32>) -> Result<u32, String> {
+    let connections = value.unwrap_or(DEFAULT_MAX_CONNECTIONS);
+
+    if connections == 0 {
+        return Err("max_connections must be at least 1.".to_string());
+    }
+
+    Ok(connections)
+}
+
+async fn run_schema_migrations(pool: &MySqlPool) -> Result<(), String> {
     for statement in SCHEMA_MIGRATION_SQL {
         sqlx::query(statement)
             .execute(pool)
@@ -223,7 +425,7 @@ pub(super) async fn run_schema_migrations(pool: &MySqlPool) -> Result<(), String
     Ok(())
 }
 
-pub(super) async fn seed_initial_data(pool: &MySqlPool) -> Result<(), String> {
+async fn seed_initial_data(pool: &MySqlPool) -> Result<(), String> {
     seed_colleges(pool).await?;
     seed_programs(pool).await?;
     seed_students(pool, MIN_STUDENT_SEED_COUNT).await?;
