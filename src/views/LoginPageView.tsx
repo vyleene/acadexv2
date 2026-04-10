@@ -85,7 +85,6 @@ function LoginPageView({ values, isSubmitting, onChange, onSubmit }: LoginPageVi
 												</InputGroup.Text>
 												<Form.Control
 													type="text"
-													placeholder="acadex"
 													value={values.database}
 													disabled={isSubmitting}
 													autoComplete="off"
@@ -104,7 +103,6 @@ function LoginPageView({ values, isSubmitting, onChange, onSubmit }: LoginPageVi
 												</InputGroup.Text>
 												<Form.Control
 													type="text"
-													placeholder="root"
 													value={values.username}
 													disabled={isSubmitting}
 													autoComplete="username"
@@ -132,9 +130,9 @@ function LoginPageView({ values, isSubmitting, onChange, onSubmit }: LoginPageVi
 										</Form.Group>
 									</Col>
 								</Row>
-
+								
 								<p className="login-form__footnote mb-0">
-									Credentials are stored for this app session only.
+									For new databases, make sure it is empty before initializing.
 								</p>
 
 								<Button

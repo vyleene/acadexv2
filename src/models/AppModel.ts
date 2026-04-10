@@ -51,6 +51,7 @@ export function dispatchLoadingStatus(payload: LoadingStatusPayload) {
 }
 
 export interface AppViewModel {
+  viewResetKey: number
   activePanel: PanelKey
   theme: ThemeMode
   toasts: ToastItem[]

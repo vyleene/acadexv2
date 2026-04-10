@@ -47,11 +47,6 @@ impl DatabaseModel {
         }
     }
 
-    pub async fn configure_placeholder(&self) -> Result<DatabaseStatus, String> {
-        let config = DatabaseConfig::placeholder();
-        self.configure_with(config).await
-    }
-
     pub async fn configure(&self, payload: DatabaseConfigPayload) -> Result<DatabaseStatus, String> {
         let config = DatabaseConfig::from_payload(payload)?;
         self.configure_with(config).await

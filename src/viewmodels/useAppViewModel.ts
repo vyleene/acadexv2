@@ -41,20 +41,24 @@ const runWindowAction = async (action: (appWindow: TauriRuntimeWindow) => Promis
 }
 
 const THEME_STORAGE_KEY = 'acadex-theme'
+const MYSQL_PROFILE_STORAGE_KEY = 'acadex-mysql-profile'
 const LOADING_ORDER: LoadingDirectoryKey[] = ['students', 'programs', 'colleges']
 const LOADING_LABELS: Record<LoadingDirectoryKey, string> = {
   students: 'students',
   programs: 'programs',
   colleges: 'colleges',
 }
+type StoredDatabaseProfile = Pick<LoginFormValues, 'host' | 'port' | 'database' | 'username'>
+
 const DEFAULT_LOGIN_FORM: LoginFormValues = {
   host: 'localhost',
   port: '3306',
-  database: 'acadex',
-  username: 'root',
-  password: 'password',
+  database: '',
+  username: '',
+  password: '',
 }
-const CHECKING_STATUS = 'Checking database...'
+const CHECKING_STATUS = 'Connecting to database...'
+const IS_TAURI_RUNTIME = isTauri()
 
 const buildDatabasePayload = (
   values: LoginFormValues,
@@ -95,6 +99,42 @@ const buildDatabasePayload = (
   }
 }
 
+const resolveMySqlLoginErrorMessage = (
+  payload: DatabaseConfigPayload,
+  rawMessage?: string,
+): string => {
+  const message = rawMessage?.toLowerCase() ?? ''
+
+  if (message.includes('unknown database')) {
+    return `Unknown database: ${payload.database}`
+  }
+
+  if (message.includes('access denied')) {
+    return 'Access denied'
+  }
+
+  if (
+    message.includes('invalid credentials') ||
+    message.includes('authentication failed')
+  ) {
+    return 'Invalid username or password'
+  }
+
+  if (
+    message.includes("can't connect") ||
+    message.includes('connection refused') ||
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('no route to host') ||
+    message.includes('unknown host') ||
+    message.includes('failed to connect')
+  ) {
+    return `Unable to connect ${payload.host}:${payload.port}`
+  }
+
+  return rawMessage ? `MySQL: ${rawMessage}` : 'MySQL: Unable to connect.'
+}
+
 const getSystemTheme = (): ThemeMode => {
   if (typeof window === 'undefined') {
     return DEFAULT_THEME
@@ -116,6 +156,40 @@ const resolveInitialTheme = (): ThemeMode => {
   return getSystemTheme()
 }
 
+const resolveInitialLoginForm = (): LoginFormValues => {
+  if (typeof window === 'undefined') {
+    return { ...DEFAULT_LOGIN_FORM }
+  }
+
+  const storedProfile = window.localStorage.getItem(MYSQL_PROFILE_STORAGE_KEY)
+
+  if (!storedProfile) {
+    return { ...DEFAULT_LOGIN_FORM }
+  }
+
+  try {
+    const parsedProfile = JSON.parse(storedProfile) as Partial<StoredDatabaseProfile>
+
+    return {
+      host:
+        typeof parsedProfile.host === 'string' ? parsedProfile.host : DEFAULT_LOGIN_FORM.host,
+      port:
+        typeof parsedProfile.port === 'string' ? parsedProfile.port : DEFAULT_LOGIN_FORM.port,
+      database:
+        typeof parsedProfile.database === 'string'
+          ? parsedProfile.database
+          : DEFAULT_LOGIN_FORM.database,
+      username:
+        typeof parsedProfile.username === 'string'
+          ? parsedProfile.username
+          : DEFAULT_LOGIN_FORM.username,
+      password: '',
+    }
+  } catch {
+    return { ...DEFAULT_LOGIN_FORM }
+  }
+}
+
 const applyTheme = (theme: ThemeMode) => {
   if (typeof document === 'undefined') {
     return
@@ -129,13 +203,14 @@ const applyTheme = (theme: ThemeMode) => {
 }
 
 export function useAppViewModel(): AppViewProps {
+  const [viewResetKey, setViewResetKey] = useState(0)
   const [activePanel, setActivePanel] = useState<PanelKey>(DEFAULT_PANEL)
   const [theme, setTheme] = useState<ThemeMode>(() => resolveInitialTheme())
   const [toasts, setToasts] = useState<ToastItem[]>([])
-  const [appStage, setAppStage] = useState<AppStage>('checking')
-  const [isLoadingVisible, setLoadingVisible] = useState(true)
+  const [appStage, setAppStage] = useState<AppStage>(IS_TAURI_RUNTIME ? 'login' : 'checking')
+  const [isLoadingVisible, setLoadingVisible] = useState(!IS_TAURI_RUNTIME)
   const [loadingStatus, setLoadingStatus] = useState(CHECKING_STATUS)
-  const [loginForm, setLoginForm] = useState<LoginFormValues>(() => ({ ...DEFAULT_LOGIN_FORM }))
+  const [loginForm, setLoginForm] = useState<LoginFormValues>(() => resolveInitialLoginForm())
   const [isLoginBusy, setLoginBusy] = useState(false)
   const [isDisconnecting, setDisconnecting] = useState(false)
   const toastIdRef = useRef(0)
@@ -155,6 +230,21 @@ export function useAppViewModel(): AppViewProps {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme)
     }
   }, [theme])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const persistedProfile: StoredDatabaseProfile = {
+      host: loginForm.host,
+      port: loginForm.port,
+      database: loginForm.database,
+      username: loginForm.username,
+    }
+
+    window.localStorage.setItem(MYSQL_PROFILE_STORAGE_KEY, JSON.stringify(persistedProfile))
+  }, [loginForm.host, loginForm.port, loginForm.database, loginForm.username])
 
   useEffect(() => {
     return () => {
@@ -220,21 +310,6 @@ export function useAppViewModel(): AppViewProps {
     setLoadingStatus(CHECKING_STATUS)
   }, [])
 
-  const showLogin = useCallback(
-    (message?: string) => {
-      goToLoginStage()
-
-      if (message) {
-        pushToast({
-          type: 'warning',
-          title: 'MySQL connection',
-          message,
-        })
-      }
-    },
-    [goToLoginStage, pushToast],
-  )
-
   const prepareDatabase = useCallback(
     async (payload: DatabaseConfigPayload) => {
       await invoke('test_mysql_database_connection', { payload })
@@ -260,41 +335,10 @@ export function useAppViewModel(): AppViewProps {
     let isActive = true
 
     const bootstrap = async () => {
-      setAppStage('checking')
-      setLoadingVisible(true)
-      setLoadingStatus(CHECKING_STATUS)
-
-      if (!isTauri()) {
+      if (!IS_TAURI_RUNTIME) {
         if (isActive) {
           beginLoadingSequence()
         }
-        return
-      }
-
-      const { payload, error } = buildDatabasePayload(DEFAULT_LOGIN_FORM)
-      if (!payload) {
-        if (isActive) {
-          showLogin(error ?? 'Database credentials are required.')
-        }
-        return
-      }
-
-      try {
-        await prepareDatabase(payload)
-        if (isActive) {
-          beginLoadingSequence()
-        }
-      } catch (error) {
-        if (!isActive) {
-          return
-        }
-
-        const message = getErrorMessage(error)
-        showLogin(
-          message
-            ? `Unable to connect to MySQL. ${message}`
-            : 'Unable to connect to MySQL. Please enter your credentials.',
-        )
       }
     }
 
@@ -303,7 +347,7 @@ export function useAppViewModel(): AppViewProps {
     return () => {
       isActive = false
     }
-  }, [beginLoadingSequence, prepareDatabase, showLogin])
+  }, [beginLoadingSequence])
 
   const onSelectPanel = (panel: PanelKey) => {
     setActivePanel(panel)
@@ -371,12 +415,13 @@ export function useAppViewModel(): AppViewProps {
       beginLoadingSequence()
     } catch (error) {
       const message = getErrorMessage(error)
+      const toastMessage = resolveMySqlLoginErrorMessage(payload, message)
       setAppStage('login')
       setLoadingVisible(false)
       pushToast({
         type: 'error',
         title: 'MySQL connection failed',
-        message: message ? `MySQL: ${message}` : 'MySQL: Unable to connect.',
+        message: toastMessage,
       })
     } finally {
       setLoginBusy(false)
@@ -401,6 +446,13 @@ export function useAppViewModel(): AppViewProps {
 
     try {
       await invoke('disconnect_mysql_database')
+      setActivePanel(DEFAULT_PANEL)
+      setToasts([])
+      setViewResetKey((previousKey) => previousKey + 1)
+      setLoginForm((previousForm) => ({
+        ...previousForm,
+        password: '',
+      }))
       goToLoginStage()
     } catch (error) {
       const message = getErrorMessage(error)
@@ -515,6 +567,7 @@ export function useAppViewModel(): AppViewProps {
   }, [appStage, hideLoadingScreen])
 
   return {
+    viewResetKey,
     activePanel,
     theme,
     toasts,

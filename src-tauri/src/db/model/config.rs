@@ -1,10 +1,5 @@
 use super::{DatabaseConfigPayload, DatabaseStatus};
 
-const DEFAULT_DATABASE_HOST: &str = "localhost";
-const DEFAULT_DATABASE_PORT: u16 = 3306;
-const DEFAULT_DATABASE_NAME: &str = "acadex";
-const DEFAULT_DATABASE_USERNAME: &str = "root";
-const DEFAULT_DATABASE_PASSWORD: &str = "password";
 const DEFAULT_MAX_CONNECTIONS: u32 = 10;
 
 #[derive(Debug, Clone)]
@@ -18,17 +13,6 @@ pub(super) struct DatabaseConfig {
 }
 
 impl DatabaseConfig {
-    pub(super) fn placeholder() -> Self {
-        Self {
-            host: DEFAULT_DATABASE_HOST.to_string(),
-            port: DEFAULT_DATABASE_PORT,
-            database: DEFAULT_DATABASE_NAME.to_string(),
-            username: DEFAULT_DATABASE_USERNAME.to_string(),
-            password: DEFAULT_DATABASE_PASSWORD.to_string(),
-            max_connections: DEFAULT_MAX_CONNECTIONS,
-        }
-    }
-
     pub(super) fn from_payload(payload: DatabaseConfigPayload) -> Result<Self, String> {
         let host = normalize_required(&payload.host, "host")?;
         let database = normalize_required(&payload.database, "database")?;

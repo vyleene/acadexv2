@@ -7,11 +7,6 @@ mod services;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let database_model = db::model::DatabaseModel::new();
-    tauri::async_runtime::block_on(async {
-        if let Err(error) = database_model.configure_placeholder().await {
-            eprintln!("Failed to configure placeholder MySQL connection: {}", error);
-        }
-    });
 
     tauri::Builder::default()
         .manage(database_model)

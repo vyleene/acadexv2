@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import type { AppViewProps } from '../models/AppModel'
 import { Card, Container } from 'react-bootstrap'
 import ProgramDirectoryCard from './components/cards/ProgramDirectoryCardComponent'
@@ -11,6 +12,7 @@ import TitleBar from './components/TitleBarComponent'
 import ToastComponent from './components/ToastComponent.tsx'
 
 function AppView({
+  viewResetKey,
   activePanel,
   appStage,
   theme,
@@ -60,7 +62,7 @@ function AppView({
       ) : null}
 
       {showAppContent ? (
-        <>
+        <Fragment key={viewResetKey}>
           <DirectoryNav activePanel={activePanel} onSelectPanel={onSelectPanel} />
           <Container as="main" className="py-4 app-content">
             <Card className="shadow-sm app-card">
@@ -71,7 +73,7 @@ function AppView({
               </Card.Body>
             </Card>
           </Container>
-        </>
+        </Fragment>
       ) : null}
     </>
   )
