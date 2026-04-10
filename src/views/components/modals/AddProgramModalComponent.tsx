@@ -20,7 +20,15 @@ function AddProgramModalComponent() {
                 <InputGroup.Text>
                   <TagIcon className="u-icon" aria-hidden="true" />
                 </InputGroup.Text>
-                <Form.Control id="program-code" name="programCode" type="text" required />
+                <Form.Control
+                  id="program-code"
+                  name="programCode"
+                  type="text"
+                  maxLength={16}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  required
+                />
               </InputGroup>
             </Form.Group>
 

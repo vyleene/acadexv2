@@ -143,6 +143,10 @@ function setProgramOptions(
   selectElement.value = normalizedSelectedCode
 }
 
+function sanitizeStudentNameInput(value: string): string {
+  return value.replace(/[^A-Za-z ]+/g, '').slice(0, 32)
+}
+
 export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([{ id: 'id', desc: false }])
@@ -244,6 +248,28 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       return
     }
 
+    const handleFirstNameInput = () => {
+      if (!firstNameInput) {
+        return
+      }
+
+      const sanitizedValue = sanitizeStudentNameInput(firstNameInput.value)
+      if (firstNameInput.value !== sanitizedValue) {
+        firstNameInput.value = sanitizedValue
+      }
+    }
+
+    const handleLastNameInput = () => {
+      if (!lastNameInput) {
+        return
+      }
+
+      const sanitizedValue = sanitizeStudentNameInput(lastNameInput.value)
+      if (lastNameInput.value !== sanitizedValue) {
+        lastNameInput.value = sanitizedValue
+      }
+    }
+
     const populateProgramSelect = async (selectedProgramCode?: string) => {
       if (!programSelect) {
         return
@@ -272,10 +298,12 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         submitButton.textContent = 'Add Student'
 
         if (idYearSelect) {
+          idYearSelect.disabled = false
           populateIdYearOptions(idYearSelect, currentYear, String(currentYear))
         }
 
         if (idNumberInput) {
+          idNumberInput.readOnly = false
           idNumberInput.value = ''
           idNumberInput.placeholder = 'NNNN'
         }
@@ -314,10 +342,12 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       form.dataset.studentId = digits
 
       if (idYearSelect) {
+        idYearSelect.disabled = true
         populateIdYearOptions(idYearSelect, currentYear, idYear.length === 4 ? idYear : String(currentYear))
       }
 
       if (idNumberInput) {
+        idNumberInput.readOnly = true
         idNumberInput.value = idNumber
         idNumberInput.placeholder = 'NNNN'
       }
@@ -372,14 +402,36 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
         return
       }
 
-      const firstName = firstNameInput?.value.trim() ?? ''
-      const lastName = lastNameInput?.value.trim() ?? ''
+      const firstName = sanitizeStudentNameInput(firstNameInput?.value ?? '').trim()
+      const lastName = sanitizeStudentNameInput(lastNameInput?.value ?? '').trim()
       const year = yearSelect?.value ?? ''
       const gender = genderSelect?.value ?? ''
       const programCode = programSelect?.value ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+      const originalStudentId = Number.parseInt(form.dataset.studentId ?? '', 10)
+      const targetStudentId =
+        mode === 'edit' && Number.isFinite(originalStudentId)
+          ? originalStudentId
+          : studentId
       const actionVerb = mode === 'add' ? 'add' : 'update'
       const actionResult = mode === 'add' ? 'added' : 'updated'
+
+      if (!firstName || !lastName) {
+        dispatchToast({
+          type: 'warning',
+          title: 'Student form incomplete',
+          message: 'Student: First name and last name must contain letters only.',
+        })
+        return
+      }
+
+      if (firstNameInput) {
+        firstNameInput.value = firstName
+      }
+
+      if (lastNameInput) {
+        lastNameInput.value = lastName
+      }
 
       submitButton.setAttribute('disabled', 'true')
 
@@ -394,7 +446,7 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
             gender,
           })
         } else {
-          await updateStudent(studentId, {
+          await updateStudent(targetStudentId, {
             program_code: programCode,
             firstname: firstName,
             lastname: lastName,
@@ -403,15 +455,16 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
           })
         }
 
+        await refreshStudents()
+
         const studentName = `${firstName} ${lastName}`.trim()
-        const studentLabel = studentName || formatStudentId(studentId)
+        const studentLabel = studentName || formatStudentId(targetStudentId)
         dispatchToast({
           type: 'success',
           title: `Student ${actionResult}`,
           message: `Student: ${studentLabel} was ${actionResult}.`,
         })
 
-        window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)
@@ -430,10 +483,14 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
       }
     }
 
+    firstNameInput?.addEventListener('input', handleFirstNameInput)
+    lastNameInput?.addEventListener('input', handleLastNameInput)
     modalElement.addEventListener('show.bs.modal', handleShow)
     form.addEventListener('submit', handleSubmit)
 
     return () => {
+      firstNameInput?.removeEventListener('input', handleFirstNameInput)
+      lastNameInput?.removeEventListener('input', handleLastNameInput)
       modalElement.removeEventListener('show.bs.modal', handleShow)
       form.removeEventListener('submit', handleSubmit)
     }
@@ -485,13 +542,13 @@ export function useStudentViewModel({ columns }: UseStudentViewModelProps) {
 
       try {
         await deleteStudent(studentId)
+        await refreshStudents()
         const studentLabel = formatStudentId(studentId)
         dispatchToast({
           type: 'success',
           title: 'Student deleted',
           message: `Student: ${studentLabel} was deleted.`,
         })
-        window.dispatchEvent(new CustomEvent(STUDENTS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(PROGRAMS_REFRESH_EVENT))
         window.dispatchEvent(new CustomEvent(COLLEGES_REFRESH_EVENT))
         closeModal(modalElement)

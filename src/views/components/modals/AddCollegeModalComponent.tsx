@@ -21,7 +21,15 @@ function AddCollegeModalComponent() {
                 <InputGroup.Text>
                   <TagIcon className="u-icon" aria-hidden="true" />
                 </InputGroup.Text>
-                <Form.Control id="college-code" name="collegeCode" type="text" required />
+                <Form.Control
+                  id="college-code"
+                  name="collegeCode"
+                  type="text"
+                  maxLength={16}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  required
+                />
               </InputGroup>
             </Form.Group>
 

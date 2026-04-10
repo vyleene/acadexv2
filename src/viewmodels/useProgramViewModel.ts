@@ -117,6 +117,10 @@ function setCollegeOptions(
   selectElement.value = normalizedSelectedCode
 }
 
+function normalizeDirectoryCodeInput(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9-]+/g, '').slice(0, 16)
+}
+
 export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([{ id: 'code', desc: false }])
@@ -202,6 +206,17 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
       return
     }
 
+    const handleCodeInput = () => {
+      if (!codeInput) {
+        return
+      }
+
+      const normalizedCode = normalizeDirectoryCodeInput(codeInput.value)
+      if (codeInput.value !== normalizedCode) {
+        codeInput.value = normalizedCode
+      }
+    }
+
     const populateCollegeSelect = async (selectedCollegeCode?: string) => {
       if (!collegeSelect) {
         return
@@ -255,7 +270,7 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
 
       if (codeInput) {
         codeInput.readOnly = true
-        codeInput.value = programCode
+        codeInput.value = normalizeDirectoryCodeInput(programCode)
       }
 
       if (nameInput) {
@@ -281,14 +296,20 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
         return
       }
 
-      const programCode = codeInput?.value.trim() ?? ''
+      const enteredProgramCode = normalizeDirectoryCodeInput(codeInput?.value ?? '')
       const programName = nameInput?.value.trim() ?? ''
       const collegeCode = collegeSelect?.value ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+      const originalProgramCode = normalizeProgramCode(form.dataset.programCode)
+      const targetProgramCode = mode === 'edit' ? originalProgramCode : enteredProgramCode
       const actionVerb = mode === 'add' ? 'add' : 'update'
       const actionResult = mode === 'add' ? 'added' : 'updated'
 
-      if (!programCode) {
+      if (codeInput) {
+        codeInput.value = enteredProgramCode
+      }
+
+      if (!targetProgramCode) {
         console.error('Program code is required to save changes.')
         dispatchToast({
           type: 'error',
@@ -302,12 +323,13 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
 
       try {
         if (mode === 'add') {
-          await createProgram({ code: programCode, name: programName, college_code: collegeCode })
+          await createProgram({ code: targetProgramCode, name: programName, college_code: collegeCode })
         } else {
-          await updateProgram(programCode, { name: programName, college_code: collegeCode })
+          await updateProgram(targetProgramCode, { name: programName, college_code: collegeCode })
         }
 
-        const programLabel = programName ? `${programName} (${programCode})` : programCode
+        const programLabel =
+          programName ? `${programName} (${targetProgramCode})` : targetProgramCode
         dispatchToast({
           type: 'success',
           title: `Program ${actionResult}`,
@@ -335,10 +357,12 @@ export function useProgramViewModel({ columns }: UseProgramViewModelProps) {
       }
     }
 
+    codeInput?.addEventListener('input', handleCodeInput)
     modalElement.addEventListener('show.bs.modal', handleShow)
     form.addEventListener('submit', handleSubmit)
 
     return () => {
+      codeInput?.removeEventListener('input', handleCodeInput)
       modalElement.removeEventListener('show.bs.modal', handleShow)
       form.removeEventListener('submit', handleSubmit)
     }

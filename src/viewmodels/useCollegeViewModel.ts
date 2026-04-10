@@ -89,6 +89,10 @@ function formatCount(value?: string) {
   return value
 }
 
+function normalizeDirectoryCodeInput(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9-]+/g, '').slice(0, 16)
+}
+
 export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([{ id: 'code', desc: false }])
@@ -172,6 +176,17 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
       return
     }
 
+    const handleCodeInput = () => {
+      if (!codeInput) {
+        return
+      }
+
+      const normalizedCode = normalizeDirectoryCodeInput(codeInput.value)
+      if (codeInput.value !== normalizedCode) {
+        codeInput.value = normalizedCode
+      }
+    }
+
     const handleShow = (event: Event) => {
       const customEvent = event as Event & { relatedTarget?: HTMLElement | null }
       const trigger = customEvent.relatedTarget
@@ -203,7 +218,7 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
 
       if (codeInput) {
         codeInput.readOnly = true
-        codeInput.value = collegeCode
+        codeInput.value = normalizeDirectoryCodeInput(collegeCode)
       }
 
       if (nameInput) {
@@ -225,13 +240,19 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
         return
       }
 
-      const collegeCode = codeInput?.value.trim() ?? ''
+      const enteredCollegeCode = normalizeDirectoryCodeInput(codeInput?.value ?? '')
       const collegeName = nameInput?.value.trim() ?? ''
       const mode = form.dataset.mode === 'edit' ? 'edit' : 'add'
+      const originalCollegeCode = normalizeCollegeCode(form.dataset.collegeCode)
+      const targetCollegeCode = mode === 'edit' ? originalCollegeCode : enteredCollegeCode
       const actionVerb = mode === 'add' ? 'add' : 'update'
       const actionResult = mode === 'add' ? 'added' : 'updated'
 
-      if (!collegeCode) {
+      if (codeInput) {
+        codeInput.value = enteredCollegeCode
+      }
+
+      if (!targetCollegeCode) {
         console.error('College code is required to save changes.')
         dispatchToast({
           type: 'error',
@@ -245,12 +266,13 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
 
       try {
         if (mode === 'add') {
-          await createCollege({ code: collegeCode, name: collegeName })
+          await createCollege({ code: targetCollegeCode, name: collegeName })
         } else {
-          await updateCollege(collegeCode, { name: collegeName })
+          await updateCollege(targetCollegeCode, { name: collegeName })
         }
 
-        const collegeLabel = collegeName ? `${collegeName} (${collegeCode})` : collegeCode
+        const collegeLabel =
+          collegeName ? `${collegeName} (${targetCollegeCode})` : targetCollegeCode
         dispatchToast({
           type: 'success',
           title: `College ${actionResult}`,
@@ -278,10 +300,12 @@ export function useCollegeViewModel({ columns }: UseCollegeViewModelProps) {
       }
     }
 
+    codeInput?.addEventListener('input', handleCodeInput)
     modalElement.addEventListener('show.bs.modal', handleShow)
     form.addEventListener('submit', handleSubmit)
 
     return () => {
+      codeInput?.removeEventListener('input', handleCodeInput)
       modalElement.removeEventListener('show.bs.modal', handleShow)
       form.removeEventListener('submit', handleSubmit)
     }

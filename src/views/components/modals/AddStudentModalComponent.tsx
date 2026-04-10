@@ -61,7 +61,7 @@ function AddStudentModalComponent() {
                       id="student-first-name"
                       name="firstName"
                       type="text"
-                      maxLength={16}
+                      maxLength={32}
                       pattern="[A-Za-z ]+"
                       placeholder="First name"
                       required
@@ -83,7 +83,7 @@ function AddStudentModalComponent() {
                       id="student-last-name"
                       name="lastName"
                       type="text"
-                      maxLength={16}
+                      maxLength={32}
                       pattern="[A-Za-z ]+"
                       placeholder="Last name"
                       required
